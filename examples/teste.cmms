@@ -1,0 +1,12 @@
+equipamento BBEFRESADF {
+    tipo bomba_centrifuga
+    servico: bombeamento_de_agua
+    produto: agua
+    características processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        vibraçao
+        pressão
+    }
+}

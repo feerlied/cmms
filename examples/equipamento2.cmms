@@ -1,0 +1,22 @@
+equipamento bomba_dosadora01 {
+    tipo: bomba_alternativa
+
+    servico: bombeamento_de_agua
+
+    produto: agua
+
+    caracteristicas_processo {
+        vazao 60 m3/h
+        pressao 10 bar
+        temperatura 25 celsius
+    }
+
+    variaveis_controladas {
+        vazao
+        pressao
+        temperatura
+        horas_operacao
+        observacao_visual
+        vazamento
+    }
+}

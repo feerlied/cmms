@@ -1,0 +1,23 @@
+registro registro_pos_manutencao_cr10 {
+    equipamento bomba_cr10
+
+    data 10/09/2026-14:45
+
+    origem manutencao_vibracao_cr10
+    tempo_execucao 3 hora
+    status concluido
+
+    valores {
+        vazao 12.1 m3/h
+        pressao 9.8 bar
+        vibracao 2.3 mm/s
+        temperatura 41 celsius
+        rotacao 2900 rpm
+        horas_operacao 1256 hora
+        observacao_visual normal
+        vazamento ausente
+    }
+
+    relatorio "Rolamentos inspecionados e conjunto verificado"
+    observacao "Vibracao retornou ao nivel normal de operacao"
+}

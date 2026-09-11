@@ -1,0 +1,15 @@
+manutencao corretiva manutencao_vibracao_cr10 {
+    equipamento bomba_cr10
+
+    quando vibracao >= 7 mm/s
+
+    procedimento inspecionar_rolamentos
+
+    prioridade alta
+
+    duracao 3 hora
+
+    prazo 4 hora
+
+    homem_hora 6
+}

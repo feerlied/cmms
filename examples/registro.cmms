@@ -1,0 +1,18 @@
+registro leitura_rotina_cr10 {
+    equipamento bomba_cr10
+
+    data 10/09/2026-08:30
+
+    valores {
+        vazao 11.8 m3/h
+        pressao 9.7 bar
+        vibracao 2.1 mm/s
+        temperatura 42 celsius
+        rotacao 2890 rpm
+        horas_operacao 1250 hora
+        observacao_visual normal
+        vazamento ausente
+    }
+
+    observacao "Equipamento operando normalmente"
+}
