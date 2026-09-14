@@ -8,6 +8,7 @@ require_once __DIR__ . '/src/Visitor/CMMSVisitor.php';
 
 use Antlr\Antlr4\Runtime\CommonTokenStream;
 use Antlr\Antlr4\Runtime\InputStream;
+use Visitor\CMMSVisitor;
 
 $arquivo = __DIR__ . '/examples/teste.cmms';
 

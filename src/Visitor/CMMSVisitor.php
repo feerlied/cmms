@@ -1,4 +1,10 @@
 <?php
+
+namespace Visitor;
+
+use CMMSParserBaseVisitor;
+use Domain\Equipamento;
+
 require_once __DIR__ . '/../Generated/CMMSParserVisitor.php';
 require_once __DIR__ . '/../Generated/CMMSParserBaseVisitor.php';
 require_once __DIR__ . '/../Domain/Equipamento.php';
