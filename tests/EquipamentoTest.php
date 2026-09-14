@@ -4,6 +4,9 @@ use Antlr\Antlr4\Runtime\CommonTokenStream;
 use Antlr\Antlr4\Runtime\InputStream;
 use Domain\CaracteristicaProcesso;
 use Domain\CaracteristicaProcessoCollection;
+use Domain\Enums\TipoEquipamento;
+use Domain\Enums\TipoProduto;
+use Domain\Enums\TipoServico;
 use Domain\Equipamento;
 use Domain\VariavelControlada;
 use Domain\VariavelControladaCollection;
@@ -22,9 +25,9 @@ final class EquipamentoTest extends TestCase
         yield 'Equipamento' => [
             "expected" => [
                 "nome" => "bomba_cr10",
-                "tipo" => "bomba_centrifuga",
-                "servico" => "bombeamento_de_agua",
-                "produto" => "agua",
+                "tipo" => TipoEquipamento::BOMBA_CENTRIFUGA,
+                "servico" => TipoServico::BOMBEAMENTO_AGUA,
+                "produto" => TipoProduto::AGUA,
             ],
             "code" =>
 "equipamento bomba_cr10 {
@@ -54,13 +57,13 @@ final class EquipamentoTest extends TestCase
         yield 'Equipamento 2' => [
             "expected" => [
                 "nome" => "bomba_dosadora01",
-                "tipo" => "bomba_alternada",
-                "servico" => "bombeamento_de_agua",
-                "produto" => "agua",
+                "tipo" => TipoEquipamento::BOMBA_ALTERNATIVA,
+                "servico" => TipoServico::BOMBEAMENTO_AGUA,
+                "produto" => TipoProduto::AGUA,
             ],
             "code" =>
 "equipamento bomba_dosadora01 {
-    tipo bomba_alternada
+    tipo bomba_alternativa
 
     servico bombeamento_de_agua
 
@@ -113,9 +116,9 @@ final class EquipamentoTest extends TestCase
 
         $equipamento = new Equipamento(
             'bomba_cr10',
-            'bomba_centrifuga',
-            'bombeamento_de_agua',
-            'agua',
+            TipoEquipamento::BOMBA_CENTRIFUGA,
+            TipoServico::BOMBEAMENTO_AGUA,
+            TipoProduto::AGUA,
             $caracteristicas,
             $variaveis
         );

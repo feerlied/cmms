@@ -2,8 +2,15 @@
 
 namespace Domain;
 
+use Domain\Enums\TipoEquipamento;
+use Domain\Enums\TipoProduto;
+use Domain\Enums\TipoServico;
+
 require_once __DIR__ . '/CaracteristicaProcessoCollection.php';
 require_once __DIR__ . '/VariavelControladaCollection.php';
+require_once __DIR__ . '/Enums/TipoEquipamento.php';
+require_once __DIR__ . '/Enums/TipoServico.php';
+require_once __DIR__ . '/Enums/TipoProduto.php';
 
 class Equipamento
 {
@@ -12,9 +19,9 @@ class Equipamento
 
     public function __construct(
         public string                     $nome,
-        public string                     $tipo,
-        public string                     $servico,
-        public string                     $produto,
+        public TipoEquipamento            $tipo,
+        public TipoServico                $servico,
+        public TipoProduto                $produto,
         ?CaracteristicaProcessoCollection $caracteristicas_processo = null,
         ?VariavelControladaCollection $variaveis_controladas = null
     ) {

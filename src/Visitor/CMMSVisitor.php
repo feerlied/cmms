@@ -3,16 +3,17 @@
 namespace Visitor;
 
 use CMMSParserBaseVisitor;
+use Domain\Enums\TipoEquipamento;
+use Domain\Enums\TipoProduto;
+use Domain\Enums\TipoServico;
 use Domain\Equipamento;
 
 require_once __DIR__ . '/../Generated/CMMSParserVisitor.php';
 require_once __DIR__ . '/../Generated/CMMSParserBaseVisitor.php';
 require_once __DIR__ . '/../Domain/Equipamento.php';
 
-class CMMSVisitor extends CMMSParserBaseVisitor
-{
-    public function visitPrograma($context)
-    {
+class CMMSVisitor extends CMMSParserBaseVisitor {
+    public function visitPrograma($context) {
         $resultado = [];
 
         foreach ($context->declaracao() as $declaracao) {
@@ -26,29 +27,27 @@ class CMMSVisitor extends CMMSParserBaseVisitor
         return $resultado;
     }
 
-    public function visitDeclaracao($context)
-    {
+    public function visitDeclaracao($context) {
         return $this->visitChildren($context);
     }
 
-    public function visitDeclaracaoEquipamento($context)
-    {
+    public function visitDeclaracaoEquipamento($context) {
         $nome = $context->IDENTIFICADOR()->getText();
 
-        $tipo = $context
+        $tipo = TipoEquipamento::fromDsl($context
             ->tipoEquipamentoDeclarado()
             ->tipoEquipamento()
-            ->getText();
+            ->getText());
 
-        $servico = $context
+        $servico = TipoServico::fromDsl($context
             ->servicoEquipamento()
             ->tipoServico()
-            ->getText();
+            ->getText());
 
-        $produto = $context
+        $produto = TipoProduto::fromDsl($context
             ->produtoEquipamento()
             ->tipoProduto()
-            ->getText();
+            ->getText());
 
         return new Equipamento(
             nome: $nome,
