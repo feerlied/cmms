@@ -2,10 +2,6 @@
 
 namespace Domain;
 
-require_once __DIR__ . '/ValorNumericoRegistro.php';
-require_once __DIR__ . '/HorasOperacaoRegistro.php';
-require_once __DIR__ . '/ObservacaoVisualRegistro.php';
-require_once __DIR__ . '/VazamentoRegistro.php';
 
 class ValorRegistradoCollection {
     /** @var list<ValorNumericoRegistro|HorasOperacaoRegistro|ObservacaoVisualRegistro|VazamentoRegistro> */

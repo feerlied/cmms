@@ -2,7 +2,7 @@
 
 namespace Domain;
 
-require_once __DIR__ . '/VariavelControlada.php';
+use Domain\Enums\VariavelControlada;
 
 class VariavelControladaCollection {
     /** @var list<VariavelControlada> */

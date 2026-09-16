@@ -7,16 +7,14 @@ use Domain\CaracteristicaProcessoCollection;
 use Domain\Enums\TipoEquipamento;
 use Domain\Enums\TipoProduto;
 use Domain\Enums\TipoServico;
+use Domain\Enums\UnidadeMedida;
+use Domain\Enums\VariavelControlada;
 use Domain\Equipamento;
-use Domain\VariavelControlada;
 use Domain\VariavelControladaCollection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Visitor\CMMSVisitor;
 
-require_once __DIR__ . '/../src/Generated/CMMSLexer.php';
-require_once __DIR__ . '/../src/Generated/CMMSParser.php';
-require_once __DIR__ . '/../src/Visitor/CMMSVisitor.php';
 
 final class EquipamentoTest extends TestCase
 {
@@ -104,13 +102,13 @@ final class EquipamentoTest extends TestCase
     }
 
     public function testCollections_SalvaObjetosNoEquipamento(): void {
-        $vazao = new CaracteristicaProcesso('vazao', 12, 'm3/h');
-        $pressao = new CaracteristicaProcesso('pressao', 10.5, 'bar');
+        $vazao = new CaracteristicaProcesso(VariavelControlada::VAZAO, 12, UnidadeMedida::M3_POR_HORA);
+        $pressao = new CaracteristicaProcesso(VariavelControlada::PRESSAO, 10.5, UnidadeMedida::BAR);
         $caracteristicas = new CaracteristicaProcessoCollection($vazao);
         $caracteristicas->add($pressao);
 
-        $variavel_vazao = new VariavelControlada('vazao');
-        $variavel_pressao = new VariavelControlada('pressao');
+        $variavel_vazao = VariavelControlada::VAZAO;
+        $variavel_pressao = VariavelControlada::PRESSAO;
         $variaveis = new VariavelControladaCollection($variavel_vazao);
         $variaveis->add($variavel_pressao);
 
@@ -126,6 +124,12 @@ final class EquipamentoTest extends TestCase
         self::assertSame([$vazao, $pressao], $equipamento->caracteristicas_processo->all());
         self::assertSame([$variavel_vazao, $variavel_pressao], $equipamento->variaveis_controladas->all());
         self::assertSame(10.5, $equipamento->caracteristicas_processo->all()[1]->valor);
-        self::assertSame('bar', $equipamento->caracteristicas_processo->all()[1]->unidade);
+        self::assertSame(UnidadeMedida::BAR, $equipamento->caracteristicas_processo->all()[1]->unidade);
+        self::assertSame(VariavelControlada::VAZAO, $equipamento->variaveis_controladas->all()[0]);
+    }
+
+    public function testCaracteristicaProcesso_VariavelNaoNumerica_Rejeitada(): void {
+        $this->expectException(InvalidArgumentException::class);
+        new CaracteristicaProcesso(VariavelControlada::VAZAMENTO, 1, UnidadeMedida::BAR);
     }
 }

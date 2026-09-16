@@ -6,9 +6,6 @@ use Domain\Enums\Comparador;
 use Domain\Enums\UnidadeMedida;
 use Domain\Enums\VariavelControlada;
 
-require_once __DIR__ . '/Enums/Comparador.php';
-require_once __DIR__ . '/Enums/UnidadeMedida.php';
-require_once __DIR__ . '/Enums/VariavelControlada.php';
 
 class CondicaoNumerica {
     public function __construct(

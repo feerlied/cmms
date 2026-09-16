@@ -19,7 +19,6 @@ use Domain\OperadorLogicoCollection;
 use Domain\Tempo;
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../src/Domain/Manutencao.php';
 
 final class ManutencaoTest extends TestCase {
     public function testPreventivaGuardaGatilhoDeCalendario(): void {

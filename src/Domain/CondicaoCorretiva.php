@@ -4,8 +4,6 @@ namespace Domain;
 
 use Domain\Enums\OperadorLogico;
 
-require_once __DIR__ . '/CondicaoCollection.php';
-require_once __DIR__ . '/OperadorLogicoCollection.php';
 
 class CondicaoCorretiva {
     public CondicaoCollection $condicoes;

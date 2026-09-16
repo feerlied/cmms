@@ -2,8 +2,6 @@
 
 namespace Domain;
 
-require_once __DIR__ . '/ExecucaoRegistro.php';
-require_once __DIR__ . '/ValorRegistradoCollection.php';
 
 class Registro {
     public function __construct(

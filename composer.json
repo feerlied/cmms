@@ -8,5 +8,14 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Domain\\": "src/Domain/",
+            "Visitor\\": "src/Visitor/"
+        },
+        "classmap": [
+            "src/Generated/"
+        ]
     }
 }

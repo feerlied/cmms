@@ -2,9 +2,6 @@
 
 namespace Domain;
 
-require_once __DIR__ . '/CondicaoNumerica.php';
-require_once __DIR__ . '/CondicaoObservacao.php';
-require_once __DIR__ . '/CondicaoVazamento.php';
 
 class CondicaoCollection {
     /** @var list<CondicaoNumerica|CondicaoObservacao|CondicaoVazamento> */

@@ -2,8 +2,6 @@
 
 namespace Domain;
 
-require_once __DIR__ . '/CaracteristicaProcesso.php';
-
 class CaracteristicaProcessoCollection {
     /** @var list<CaracteristicaProcesso> */
     private array $itens = [];

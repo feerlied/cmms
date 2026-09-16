@@ -16,7 +16,6 @@ use Domain\ValorRegistradoCollection;
 use Domain\VazamentoRegistro;
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../src/Domain/Registro.php';
 
 final class RegistroTest extends TestCase {
     public function testRegistro_CamposObrigatorios_ExecucaoETextosAusentes(): void {

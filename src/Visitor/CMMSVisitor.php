@@ -8,9 +8,6 @@ use Domain\Enums\TipoProduto;
 use Domain\Enums\TipoServico;
 use Domain\Equipamento;
 
-require_once __DIR__ . '/../Generated/CMMSParserVisitor.php';
-require_once __DIR__ . '/../Generated/CMMSParserBaseVisitor.php';
-require_once __DIR__ . '/../Domain/Equipamento.php';
 
 class CMMSVisitor extends CMMSParserBaseVisitor {
     public function visitPrograma($context) {

@@ -5,10 +5,6 @@ namespace Domain;
 use Domain\Enums\Prioridade;
 use Domain\Enums\TipoManutencao;
 
-require_once __DIR__ . '/Tempo.php';
-require_once __DIR__ . '/CondicaoCorretiva.php';
-require_once __DIR__ . '/Enums/Prioridade.php';
-require_once __DIR__ . '/Enums/TipoManutencao.php';
 
 class Manutencao {
     public function __construct(

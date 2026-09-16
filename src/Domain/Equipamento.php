@@ -6,12 +6,6 @@ use Domain\Enums\TipoEquipamento;
 use Domain\Enums\TipoProduto;
 use Domain\Enums\TipoServico;
 
-require_once __DIR__ . '/CaracteristicaProcessoCollection.php';
-require_once __DIR__ . '/VariavelControladaCollection.php';
-require_once __DIR__ . '/Enums/TipoEquipamento.php';
-require_once __DIR__ . '/Enums/TipoServico.php';
-require_once __DIR__ . '/Enums/TipoProduto.php';
-
 class Equipamento
 {
     public CaracteristicaProcessoCollection $caracteristicas_processo;

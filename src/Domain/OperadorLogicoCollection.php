@@ -4,7 +4,6 @@ namespace Domain;
 
 use Domain\Enums\OperadorLogico;
 
-require_once __DIR__ . '/Enums/OperadorLogico.php';
 
 class OperadorLogicoCollection {
     /** @var list<OperadorLogico> */

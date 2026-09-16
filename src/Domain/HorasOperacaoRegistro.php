@@ -2,7 +2,6 @@
 
 namespace Domain;
 
-require_once __DIR__ . '/Tempo.php';
 
 class HorasOperacaoRegistro {
     public function __construct(

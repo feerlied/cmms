@@ -15,18 +15,6 @@ use Domain\Enums\VariavelControlada;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../src/Domain/Enums/TipoEquipamento.php';
-require_once __DIR__ . '/../src/Domain/Enums/TipoServico.php';
-require_once __DIR__ . '/../src/Domain/Enums/TipoProduto.php';
-require_once __DIR__ . '/../src/Domain/Enums/Comparador.php';
-require_once __DIR__ . '/../src/Domain/Enums/EstadoObservacao.php';
-require_once __DIR__ . '/../src/Domain/Enums/EstadoVazamento.php';
-require_once __DIR__ . '/../src/Domain/Enums/Prioridade.php';
-require_once __DIR__ . '/../src/Domain/Enums/StatusRegistro.php';
-require_once __DIR__ . '/../src/Domain/Enums/TipoManutencao.php';
-require_once __DIR__ . '/../src/Domain/Enums/UnidadeMedida.php';
-require_once __DIR__ . '/../src/Domain/Enums/UnidadeTempo.php';
-require_once __DIR__ . '/../src/Domain/Enums/VariavelControlada.php';
 
 final class EnumsTest extends TestCase {
 
