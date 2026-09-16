@@ -6,7 +6,7 @@ use Domain\Enums\Prioridade;
 use Domain\Enums\TipoManutencao;
 
 
-class Manutencao {
+readonly class Manutencao {
     public function __construct(
         public string $nome,
         public TipoManutencao $tipo,

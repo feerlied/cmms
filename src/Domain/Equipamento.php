@@ -6,8 +6,7 @@ use Domain\Enums\TipoEquipamento;
 use Domain\Enums\TipoProduto;
 use Domain\Enums\TipoServico;
 
-class Equipamento
-{
+readonly class Equipamento {
     public CaracteristicaProcessoCollection $caracteristicas_processo;
     public VariavelControladaCollection $variaveis_controladas;
 

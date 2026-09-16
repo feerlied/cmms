@@ -3,7 +3,7 @@
 namespace Domain;
 
 
-class Registro {
+readonly class Registro {
     public function __construct(
         public string $nome,
         public string $equipamento_identificador,
