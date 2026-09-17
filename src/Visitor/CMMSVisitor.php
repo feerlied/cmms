@@ -14,6 +14,7 @@ use Domain\Enums\EstadoObservacao;
 use Domain\Enums\EstadoVazamento;
 use Domain\Enums\OperadorLogico;
 use Domain\Enums\Prioridade;
+use Domain\Enums\StatusRegistro;
 use Domain\Enums\TipoEquipamento;
 use Domain\Enums\TipoManutencao;
 use Domain\Enums\TipoProduto;
@@ -22,9 +23,16 @@ use Domain\Enums\UnidadeMedida;
 use Domain\Enums\UnidadeTempo;
 use Domain\Enums\VariavelControlada;
 use Domain\Equipamento;
+use Domain\ExecucaoRegistro;
+use Domain\HorasOperacaoRegistro;
 use Domain\Manutencao;
+use Domain\ObservacaoVisualRegistro;
+use Domain\Registro;
 use Domain\Tempo;
+use Domain\ValorNumericoRegistro;
+use Domain\ValorRegistradoCollection;
 use Domain\VariavelControladaCollection;
+use Domain\VazamentoRegistro;
 
 
 class CMMSVisitor extends CMMSParserBaseVisitor {
@@ -117,6 +125,22 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
         );
     }
 
+    public function visitRegistro($context) {
+        $contexto_execucao = $context->registroExe();
+        $contexto_relatorio = $context->relatorioRegistro();
+        $contexto_observacao = $context->observacaoRegistro();
+
+        return new Registro(
+            nome: $context->IDENTIFICADOR()->getText(),
+            equipamento_identificador: $context->equipamentoIdentificador()->IDENTIFICADOR()->getText(),
+            data: $this->createRecordDate($context->dataRegistro()->unidadeDataHora()),
+            valores: $this->createRecordedValues($context->blocoValores()),
+            execucao: $contexto_execucao === null ? null : $this->createRecordExecution($contexto_execucao),
+            relatorio: $contexto_relatorio === null ? null : $this->parseText($contexto_relatorio->TEXTO()->getText()),
+            observacao: $contexto_observacao === null ? null : $this->parseText($contexto_observacao->TEXTO()->getText())
+        );
+    }
+
     private function createProcessCharacteristics($context): CaracteristicaProcessoCollection {
         $caracteristicas_processo = new CaracteristicaProcessoCollection();
 
@@ -170,6 +194,72 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
             valor: $this->parseNumber($numero),
             unidade: UnidadeTempo::fromDsl($unidade)
         );
+    }
+
+    private function createRecordDate($context): \DateTimeImmutable {
+        $partes = array_map(
+            static fn($numero) => $numero->getText(),
+            $context->NUMERO()
+        );
+
+        return \DateTimeImmutable::createFromFormat(
+            '!d/m/Y-H:i',
+            implode('/', array_slice($partes, 0, 3)) . '-' . implode(':', array_slice($partes, 3, 2))
+        );
+    }
+
+    private function createRecordExecution($context): ExecucaoRegistro {
+        return new ExecucaoRegistro(
+            origem: $context->IDENTIFICADOR()->getText(),
+            tempo_execucao: $this->createTime(
+                $context->NUMERO()->getText(),
+                $context->unidadeTempo()->getText()
+            ),
+            status: StatusRegistro::fromDsl($context->statusRegistro()->getText())
+        );
+    }
+
+    private function createRecordedValues($context): ValorRegistradoCollection {
+        $valores = new ValorRegistradoCollection();
+
+        foreach ($context->valorRegistrado() as $valor) {
+            $valores->add($this->createRecordedValue($valor));
+        }
+
+        return $valores;
+    }
+
+    private function createRecordedValue($context): ValorNumericoRegistro|HorasOperacaoRegistro|ObservacaoVisualRegistro|VazamentoRegistro {
+        if ($context->variavelNumerica() !== null) {
+            return new ValorNumericoRegistro(
+                variavel: VariavelControlada::fromDsl($context->variavelNumerica()->getText()),
+                valor: $this->parseNumber($context->NUMERO()->getText()),
+                unidade: UnidadeMedida::fromDsl($context->unidade()->getText())
+            );
+        }
+
+        if ($context->HORAS_OPERACAO() !== null) {
+            return new HorasOperacaoRegistro(
+                horas_operacao: $this->createTime(
+                    $context->NUMERO()->getText(),
+                    $context->unidadeTempo()->getText()
+                )
+            );
+        }
+
+        if ($context->OBSERVACAO_VISUAL() !== null) {
+            return new ObservacaoVisualRegistro(
+                estado: EstadoObservacao::fromDsl($context->estadoObservacao()->getText())
+            );
+        }
+
+        return new VazamentoRegistro(
+            estado: EstadoVazamento::fromDsl($context->estadoVazamento()->getText())
+        );
+    }
+
+    private function parseText(string $texto): string {
+        return substr($texto, 1, -1);
     }
 
     private function createCorrectiveCondition($context): CondicaoCorretiva {
