@@ -197,15 +197,22 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
     }
 
     private function createRecordDate($context): \DateTimeImmutable {
-        $partes = array_map(
-            static fn($numero) => $numero->getText(),
-            $context->NUMERO()
-        );
+        $texto_data = $context->getText();
 
-        return \DateTimeImmutable::createFromFormat(
-            '!d/m/Y-H:i',
-            implode('/', array_slice($partes, 0, 3)) . '-' . implode(':', array_slice($partes, 3, 2))
-        );
+        if (preg_match('~\A([0-9]{2})/([0-9]{2})/([0-9]{4})-([0-9]{2}):([0-9]{2})\z~', $texto_data, $componentes) !== 1) {
+            throw new \InvalidArgumentException("Data do registro inválida: {$texto_data}");
+        }
+
+        $data = \DateTimeImmutable::createFromFormat('!d/m/Y-H:i', $texto_data);
+        $erros = \DateTimeImmutable::getLastErrors();
+
+        if (!checkdate((int) $componentes[2], (int) $componentes[1], (int) $componentes[3])
+            || $data === false
+            || ($erros !== false && ($erros['warning_count'] > 0 || $erros['error_count'] > 0))) {
+            throw new \InvalidArgumentException("Data do registro inválida: {$texto_data}");
+        }
+
+        return $data;
     }
 
     private function createRecordExecution($context): ExecucaoRegistro {

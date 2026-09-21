@@ -49,6 +49,56 @@ final class RegistroTest extends TestCase {
         self::assertSame(UnidadeMedida::BAR, $valores[0]->unidade);
     }
 
+    public function testeVisitor_DataDeAnoBissextoValida_PreservaDataDoRegistro(): void {
+        $codigo =
+"registro registro_bissexto {
+    equipamento bomba_cr10
+    data 29/02/2024-08:30
+    valores {
+        pressao 9.7 bar
+    }
+}";
+
+        $registro = $this->transformRecord($codigo);
+
+        self::assertSame('2024-02-29 08:30', $registro->data->format('Y-m-d H:i'));
+    }
+
+    public static function datasInvalidasDeRegistro(): iterable {
+        yield 'dia inexistente' => ['31/02/2026-08:30'];
+        yield 'dia decimal' => ['1.5/09/2026-08:30'];
+        yield 'dia sem dois dígitos' => ['1/09/2026-08:30'];
+        yield 'mês sem dois dígitos' => ['10/9/2026-08:30'];
+        yield 'ano sem quatro dígitos' => ['10/09/26-08:30'];
+        yield 'hora sem dois dígitos' => ['10/09/2026-8:30'];
+        yield 'minuto sem dois dígitos' => ['10/09/2026-08:3'];
+        yield 'horário inexistente' => ['10/09/2026-25:90'];
+        yield 'ano zero' => ['01/01/0000-08:30'];
+    }
+
+    #[DataProvider('datasInvalidasDeRegistro')]
+    public function testeVisitor_DataInvalida_RejeitaRegistroComErroPrevisivel(string $data_dsl): void {
+        $codigo =
+"registro registro_data_invalida {
+    equipamento bomba_cr10
+    data {$data_dsl}
+    valores {
+        pressao 9.7 bar
+    }
+}";
+
+        $lexer = new CMMSLexer(InputStream::fromString($codigo));
+        $parser = new CMMSParser(new CommonTokenStream($lexer));
+        $arvore = $parser->programa();
+
+        self::assertSame(0, $parser->getNumberOfSyntaxErrors());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Data do registro inválida: {$data_dsl}");
+
+        (new CMMSVisitor())->visit($arvore);
+    }
+
     public function testeVisitor_DeclaracaoCompleta_RetornaTodasAsFormasDeValorECamposOpcionais(): void {
         $codigo =
 "registro registro_pos_manutencao {
