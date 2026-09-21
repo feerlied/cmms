@@ -248,6 +248,62 @@ final class RegistroTest extends TestCase {
         self::assertSame($unidade_esperada, $valor->unidade);
     }
 
+    public static function numerosRepresentaveis(): iterable {
+        yield 'inteiro no limite' => [(string) PHP_INT_MAX, PHP_INT_MAX];
+        yield 'inteiro com zeros à esquerda' => ['000' . PHP_INT_MAX, PHP_INT_MAX];
+        yield 'inteiro zero' => ['000', 0];
+        yield 'decimal comum' => ['0.1', 0.1];
+        yield 'decimal zero' => ['0.0', 0.0];
+        yield 'decimal grande finito' => ['1' . str_repeat('0', 308) . '.0', 1.0e308];
+        yield 'decimal subnormal finito' => ['0.' . str_repeat('0', 323) . '5', 5.0e-324];
+    }
+
+    #[DataProvider('numerosRepresentaveis')]
+    public function testeVisitor_NumeroRepresentavel_PreservaValorETipo(string $numero_dsl, int|float $valor_esperado): void {
+        $codigo =
+"registro registro_limite_numerico {
+    equipamento bomba_cr10
+    data 14/09/2026-12:30
+    valores {
+        pressao {$numero_dsl} bar
+    }
+}";
+
+        $valor = $this->transformRecord($codigo)->valores->all()[0];
+
+        self::assertInstanceOf(ValorNumericoRegistro::class, $valor);
+        self::assertSame($valor_esperado, $valor->valor);
+    }
+
+    public static function numerosNaoRepresentaveis(): iterable {
+        yield 'inteiro acima do limite' => ['9223372036854775808'];
+        yield 'decimal infinito' => [str_repeat('9', 309) . '.0'];
+        yield 'decimal não zero convertido em zero' => ['0.' . str_repeat('0', 324) . '1'];
+    }
+
+    #[DataProvider('numerosNaoRepresentaveis')]
+    public function testeVisitor_NumeroNaoRepresentavel_RejeitaRegistro(string $numero_dsl): void {
+        $codigo =
+"registro registro_numero_invalido {
+    equipamento bomba_cr10
+    data 14/09/2026-12:30
+    valores {
+        pressao {$numero_dsl} bar
+    }
+}";
+
+        $lexer = new CMMSLexer(InputStream::fromString($codigo));
+        $parser = new CMMSParser(new CommonTokenStream($lexer));
+        $arvore = $parser->programa();
+
+        self::assertSame(0, $parser->getNumberOfSyntaxErrors());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Número não representável: {$numero_dsl}");
+
+        (new CMMSVisitor())->visit($arvore);
+    }
+
     public static function unidadesDeValoresNumericos(): iterable {
         yield 'milímetros por segundo' => ['mm/s', UnidadeMedida::MM_POR_S];
         yield 'celsius' => ['celsius', UnidadeMedida::CELSIUS];

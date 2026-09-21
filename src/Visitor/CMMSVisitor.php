@@ -327,6 +327,29 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
     }
 
     private function parseNumber(string $numero): int|float {
-        return str_contains($numero, '.') ? (float) $numero : (int) $numero;
+        if (str_contains($numero, '.')) {
+            $valor = (float) $numero;
+
+            if (!is_finite($valor) || ($valor === 0.0 && preg_match('/[1-9]/', $numero) === 1)) {
+                throw new \InvalidArgumentException("Número não representável: {$numero}");
+            }
+
+            return $valor;
+        }
+
+        $numero_sem_zeros = ltrim($numero, '0');
+
+        if ($numero_sem_zeros === '') {
+            return 0;
+        }
+
+        $limite_inteiro = (string) PHP_INT_MAX;
+
+        if (strlen($numero_sem_zeros) > strlen($limite_inteiro)
+            || (strlen($numero_sem_zeros) === strlen($limite_inteiro) && strcmp($numero_sem_zeros, $limite_inteiro) > 0)) {
+            throw new \InvalidArgumentException("Número não representável: {$numero}");
+        }
+
+        return (int) $numero_sem_zeros;
     }
 }
