@@ -12,6 +12,7 @@
     "autoload": {
         "psr-4": {
             "Application\\": "src/Application/",
+            "Diagnostic\\": "src/Diagnostic/",
             "Domain\\": "src/Domain/",
             "Visitor\\": "src/Visitor/"
         },
