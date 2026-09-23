@@ -4,7 +4,8 @@
     "type": "project",
     "license": "proprietary",
     "require": {
-        "antlr/antlr4-php-runtime": "^0.10.0"
+        "antlr/antlr4-php-runtime": "^0.10.0",
+        "ext-mbstring": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5"

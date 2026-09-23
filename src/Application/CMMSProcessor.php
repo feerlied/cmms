@@ -1,22 +1,40 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Application;
 
 use Antlr\Antlr4\Runtime\CommonTokenStream;
 use Antlr\Antlr4\Runtime\InputStream;
+use Diagnostic\DiagnosticOrigin;
 use Visitor\CMMSVisitor;
 
 final class CMMSProcessor {
-    /**
-     * @return list<\Domain\Equipamento|\Domain\Manutencao|\Domain\Registro>
-     */
-    public function process(string $codigo): array {
+
+    public function process(string $codigo): ProcessingResult {
         $input = InputStream::fromString($codigo);
         $lexer = new \CMMSLexer($input);
+        $lexer_listener = new AntlrDiagnosticListener(DiagnosticOrigin::LEXICAL);
+        $lexer->removeErrorListeners();
+        $lexer->addErrorListener($lexer_listener);
+
         $tokens = new CommonTokenStream($lexer);
+        $tokens->fill();
+
+        if ($lexer_listener->getDiagnostics() !== []) {
+            return new ProcessingResult([], $lexer_listener->getDiagnostics());
+        }
+
         $parser = new \CMMSParser($tokens);
+        $parser_listener = new AntlrDiagnosticListener(DiagnosticOrigin::SYNTACTIC);
+        $parser->removeErrorListeners();
+        $parser->addErrorListener($parser_listener);
         $arvore = $parser->programa();
 
-        return new CMMSVisitor()->visit($arvore);
+        if ($parser_listener->getDiagnostics() !== []) {
+            return new ProcessingResult([], $parser_listener->getDiagnostics());
+        }
+
+        return new ProcessingResult(new CMMSVisitor()->visit($arvore), []);
     }
 }

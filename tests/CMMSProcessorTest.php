@@ -1,6 +1,8 @@
 <?php
 
 use Application\CMMSProcessor;
+use Diagnostic\DiagnosticOrigin;
+use Diagnostic\DiagnosticSeverity;
 use Domain\Equipamento;
 use Domain\Manutencao;
 use Domain\Registro;
@@ -38,14 +40,48 @@ registro leitura_bomba_cr10 {
     }
 }";
 
-        $objetos = (new CMMSProcessor())->process($codigo);
+        $resultado = (new CMMSProcessor())->process($codigo);
 
-        self::assertCount(3, $objetos);
-        self::assertInstanceOf(Equipamento::class, $objetos[0]);
-        self::assertInstanceOf(Manutencao::class, $objetos[1]);
-        self::assertInstanceOf(Registro::class, $objetos[2]);
-        self::assertSame('bomba_cr10', $objetos[0]->nome);
-        self::assertSame('inspecao_bomba_cr10', $objetos[1]->nome);
-        self::assertSame('leitura_bomba_cr10', $objetos[2]->nome);
+        self::assertTrue($resultado->isSuccess());
+        self::assertSame([], $resultado->diagnosticos);
+        self::assertCount(3, $resultado->objetos);
+        self::assertInstanceOf(Equipamento::class, $resultado->objetos[0]);
+        self::assertInstanceOf(Manutencao::class, $resultado->objetos[1]);
+        self::assertInstanceOf(Registro::class, $resultado->objetos[2]);
+        self::assertSame('bomba_cr10', $resultado->objetos[0]->nome);
+        self::assertSame('inspecao_bomba_cr10', $resultado->objetos[1]->nome);
+        self::assertSame('leitura_bomba_cr10', $resultado->objetos[2]->nome);
+    }
+
+    public function testeProcess_CaractereInvalido_RetornaDiagnosticoLexicoSemObjetos(): void {
+        $resultado = (new CMMSProcessor())->process('equipamento bomba @');
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-LEX-001', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::LEXICAL, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+        self::assertSame("token recognition error at: '@'", $resultado->diagnosticos[0]->mensagem);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->inicio->linha);
+        self::assertSame(18, $resultado->diagnosticos[0]->range->inicio->coluna);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->fim->linha);
+        self::assertSame(19, $resultado->diagnosticos[0]->range->fim->coluna);
+    }
+
+    public function testeProcess_CampoObrigatorioAusente_NaoExecutaVisitorERetornaDiagnosticoSintatico(): void {
+        $resultado = (new CMMSProcessor())->process('equipamento bomba {}');
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SYN-001', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SYNTACTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+        self::assertStringContainsString("mismatched input '}'", $resultado->diagnosticos[0]->mensagem);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->inicio->linha);
+        self::assertSame(19, $resultado->diagnosticos[0]->range->inicio->coluna);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->fim->linha);
+        self::assertSame(20, $resultado->diagnosticos[0]->range->fim->coluna);
     }
 }
