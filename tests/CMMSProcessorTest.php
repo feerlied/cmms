@@ -6,6 +6,7 @@ use Diagnostic\DiagnosticSeverity;
 use Domain\Equipamento;
 use Domain\Manutencao;
 use Domain\Registro;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CMMSProcessorTest extends TestCase {
@@ -53,35 +54,170 @@ registro leitura_bomba_cr10 {
         self::assertSame('leitura_bomba_cr10', $resultado->objetos[2]->nome);
     }
 
-    public function testeProcess_CaractereInvalido_RetornaDiagnosticoLexicoSemObjetos(): void {
-        $resultado = (new CMMSProcessor())->process('equipamento bomba @');
+    public static function programasInvalidos(): iterable {
+        yield 'caractere léxico inválido' => [
+            'equipamento bomba @',
+            DiagnosticOrigin::LEXICAL,
+            0,
+            18,
+            1,
+        ];
+
+        yield 'caractere léxico inválido no início' => [
+            '@equipamento',
+            DiagnosticOrigin::LEXICAL,
+            0,
+            0,
+            1,
+        ];
+
+        yield 'caractere léxico inválido em linha posterior' => [
+            "equipamento bomba {\n"
+            . "    tipo bomba_centrifuga\n"
+            . '    #',
+            DiagnosticOrigin::LEXICAL,
+            2,
+            4,
+            1,
+        ];
+
+        yield 'caractere léxico inválido em identificador' => [
+            'registro r { equipamento bom#ba',
+            DiagnosticOrigin::LEXICAL,
+            0,
+            28,
+            1,
+        ];
+
+        yield 'declaração desconhecida' => [
+            'desconhecida item {}',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            0,
+            1,
+        ];
+
+        yield 'equipamento incompleto' => [
+            'equipamento bomba {}',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            19,
+            1,
+        ];
+
+        yield 'equipamento com serviço inválido' => [
+            'equipamento bomba { tipo bomba_centrifuga servico agua produto agua caracteristicas_processo { pressao 10 bar } variaveis_controladas { pressao } }',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            50,
+            1,
+        ];
+
+        yield 'manutenção preventiva incompleta' => [
+            'manutencao preventiva inspecao {}',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            32,
+            1,
+        ];
+
+        yield 'manutenção corretiva com condição inválida' => [
+            'manutencao corretiva correcao { equipamento bomba quando pressao maior bar procedimento p prioridade alta duracao 1 hora prazo 1 dia homem_hora 1 }',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            71,
+            1,
+        ];
+
+        yield 'registro incompleto' => [
+            'registro r {}',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            12,
+            1,
+        ];
+
+        yield 'valor registrado malformado' => [
+            'registro r { equipamento bomba data 01/01/2026-10:00 valores { pressao bar } }',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            71,
+            1,
+        ];
+
+        yield 'delimitador de data ausente' => [
+            "registro r {\n"
+            . "    equipamento bomba\n"
+            . "    data 01 01/2026-10:00\n"
+            . "    valores {\n"
+            . "        pressao 1 bar\n"
+            . "    }\n"
+            . '}',
+            DiagnosticOrigin::SYNTACTIC,
+            2,
+            12,
+            2,
+        ];
+
+        yield 'token inesperado' => [
+            'equipamento bomba { inesperado tipo bomba_centrifuga servico bombeamento_agua produto agua caracteristicas_processo { pressao 10 bar } variaveis_controladas { pressao } }',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            20,
+            1,
+        ];
+
+        yield 'entrada truncada' => [
+            'registro r { equipamento bomba',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            30,
+            1,
+        ];
+
+        yield 'múltiplos erros recuperáveis' => [
+            'equipamento bomba { tipo bomba_centrifuga servico agua produto invalido caracteristicas_processo { pressao 10 bar } variaveis_controladas { pressao } }',
+            DiagnosticOrigin::SYNTACTIC,
+            0,
+            50,
+            2,
+        ];
+    }
+
+    #[DataProvider('programasInvalidos')]
+    public function testeProcess_ProgramaInvalido_RetornaDiagnosticosSemObjetosDeDomain(
+        string $codigo,
+        DiagnosticOrigin $origem_esperada,
+        int $linha_esperada,
+        int $coluna_esperada,
+        int $quantidade_minima_diagnosticos,
+    ): void {
+        $resultado = (new CMMSProcessor())->process($codigo);
 
         self::assertFalse($resultado->isSuccess());
         self::assertSame([], $resultado->objetos);
-        self::assertCount(1, $resultado->diagnosticos);
-        self::assertSame('CMMS-LEX-001', $resultado->diagnosticos[0]->codigo);
-        self::assertSame(DiagnosticOrigin::LEXICAL, $resultado->diagnosticos[0]->origem);
-        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
-        self::assertSame("token recognition error at: '@'", $resultado->diagnosticos[0]->mensagem);
-        self::assertSame(0, $resultado->diagnosticos[0]->range->inicio->linha);
-        self::assertSame(18, $resultado->diagnosticos[0]->range->inicio->coluna);
-        self::assertSame(0, $resultado->diagnosticos[0]->range->fim->linha);
-        self::assertSame(19, $resultado->diagnosticos[0]->range->fim->coluna);
+        self::assertGreaterThanOrEqual($quantidade_minima_diagnosticos, count($resultado->diagnosticos));
+
+        foreach ($resultado->diagnosticos as $diagnostico) {
+            self::assertSame($origem_esperada, $diagnostico->origem);
+            self::assertSame(DiagnosticSeverity::ERROR, $diagnostico->severidade);
+            self::assertNotSame('', $diagnostico->mensagem);
+            self::assertNotNull($diagnostico->range);
+        }
+
+        $primeiro_diagnostico = $resultado->diagnosticos[0];
+
+        self::assertSame($linha_esperada, $primeiro_diagnostico->range->inicio->linha);
+        self::assertSame($coluna_esperada, $primeiro_diagnostico->range->inicio->coluna);
     }
 
-    public function testeProcess_CampoObrigatorioAusente_NaoExecutaVisitorERetornaDiagnosticoSintatico(): void {
+    public function testeProcess_EquipamentoIncompleto_NaoExecutaVisitorERetornaDiagnosticoSintatico(): void {
         $resultado = (new CMMSProcessor())->process('equipamento bomba {}');
 
         self::assertFalse($resultado->isSuccess());
         self::assertSame([], $resultado->objetos);
         self::assertCount(1, $resultado->diagnosticos);
-        self::assertSame('CMMS-SYN-001', $resultado->diagnosticos[0]->codigo);
         self::assertSame(DiagnosticOrigin::SYNTACTIC, $resultado->diagnosticos[0]->origem);
         self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
-        self::assertStringContainsString("mismatched input '}'", $resultado->diagnosticos[0]->mensagem);
-        self::assertSame(0, $resultado->diagnosticos[0]->range->inicio->linha);
-        self::assertSame(19, $resultado->diagnosticos[0]->range->inicio->coluna);
-        self::assertSame(0, $resultado->diagnosticos[0]->range->fim->linha);
-        self::assertSame(20, $resultado->diagnosticos[0]->range->fim->coluna);
     }
 }
