@@ -19,6 +19,8 @@ use Domain\VazamentoRegistro;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Visitor\CMMSVisitor;
+use Visitor\Exception\InvalidRecordDateException;
+use Visitor\Exception\UnrepresentableNumberException;
 
 
 final class RegistroTest extends TestCase {
@@ -93,7 +95,7 @@ final class RegistroTest extends TestCase {
 
         self::assertSame(0, $parser->getNumberOfSyntaxErrors());
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRecordDateException::class);
         $this->expectExceptionMessage("Data do registro inválida: {$data_dsl}");
 
         (new CMMSVisitor())->visit($arvore);
@@ -298,7 +300,7 @@ final class RegistroTest extends TestCase {
 
         self::assertSame(0, $parser->getNumberOfSyntaxErrors());
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(UnrepresentableNumberException::class);
         $this->expectExceptionMessage("Número não representável: {$numero_dsl}");
 
         (new CMMSVisitor())->visit($arvore);

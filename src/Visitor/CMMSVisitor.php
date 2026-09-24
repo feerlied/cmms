@@ -33,6 +33,8 @@ use Domain\ValorNumericoRegistro;
 use Domain\ValorRegistradoCollection;
 use Domain\VariavelControladaCollection;
 use Domain\VazamentoRegistro;
+use Visitor\Exception\InvalidRecordDateException;
+use Visitor\Exception\UnrepresentableNumberException;
 
 
 class CMMSVisitor extends CMMSParserBaseVisitor {
@@ -200,7 +202,7 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
         $texto_data = $context->getText();
 
         if (preg_match('~\A([0-9]{2})/([0-9]{2})/([0-9]{4})-([0-9]{2}):([0-9]{2})\z~', $texto_data, $componentes) !== 1) {
-            throw new \InvalidArgumentException("Data do registro inválida: {$texto_data}");
+            throw new InvalidRecordDateException("Data do registro inválida: {$texto_data}");
         }
 
         $data = \DateTimeImmutable::createFromFormat('!d/m/Y-H:i', $texto_data);
@@ -209,7 +211,7 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
         if (!checkdate((int) $componentes[2], (int) $componentes[1], (int) $componentes[3])
             || $data === false
             || ($erros !== false && ($erros['warning_count'] > 0 || $erros['error_count'] > 0))) {
-            throw new \InvalidArgumentException("Data do registro inválida: {$texto_data}");
+            throw new InvalidRecordDateException("Data do registro inválida: {$texto_data}");
         }
 
         return $data;
@@ -331,7 +333,7 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
             $valor = (float) $numero;
 
             if (!is_finite($valor) || ($valor === 0.0 && preg_match('/[1-9]/', $numero) === 1)) {
-                throw new \InvalidArgumentException("Número não representável: {$numero}");
+                throw new UnrepresentableNumberException("Número não representável: {$numero}");
             }
 
             return $valor;
@@ -347,7 +349,7 @@ class CMMSVisitor extends CMMSParserBaseVisitor {
 
         if (strlen($numero_sem_zeros) > strlen($limite_inteiro)
             || (strlen($numero_sem_zeros) === strlen($limite_inteiro) && strcmp($numero_sem_zeros, $limite_inteiro) > 0)) {
-            throw new \InvalidArgumentException("Número não representável: {$numero}");
+            throw new UnrepresentableNumberException("Número não representável: {$numero}");
         }
 
         return (int) $numero_sem_zeros;
