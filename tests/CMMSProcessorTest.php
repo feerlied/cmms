@@ -1,6 +1,7 @@
 <?php
 
 use Application\CMMSProcessor;
+use Application\ProcessingStatus;
 use Diagnostic\DiagnosticOrigin;
 use Diagnostic\DiagnosticSeverity;
 use Domain\Equipamento;
@@ -10,6 +11,91 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CMMSProcessorTest extends TestCase {
+    public function testeProcess_ProgramaMinimoValido_RetornaEquipamentoDeDomain(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertTrue($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SUCCESS, $resultado->status);
+        self::assertSame([], $resultado->diagnosticos);
+        self::assertCount(1, $resultado->objetos);
+        self::assertInstanceOf(Equipamento::class, $resultado->objetos[0]);
+        self::assertSame('bomba_cr10', $resultado->objetos[0]->nome);
+    }
+
+    public function testeProcess_ProgramaCompletoValido_RetornaTodasAsEntidadesDeDomainNaOrdemDoCodigo(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+        observacao_visual
+        vazamento
+    }
+}
+
+manutencao preventiva inspecao_bomba_cr10 {
+    equipamento bomba_cr10
+    a_cada 1 dia
+    procedimento inspecionar_bomba
+    prioridade media
+    duracao 2 hora
+    homem_hora 2
+}
+
+manutencao corretiva reparar_bomba_cr10 {
+    equipamento bomba_cr10
+    quando pressao maior 12 bar e observacao_visual anormal ou vazamento grave
+    procedimento reparar_bomba
+    prioridade alta
+    duracao 2 hora
+    prazo 1 dia
+    homem_hora 2
+}
+
+registro leitura_bomba_cr10 {
+    equipamento bomba_cr10
+    data 10/09/2026-08:30
+    valores {
+        pressao 13 bar
+        observacao_visual anormal
+        vazamento grave
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertTrue($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SUCCESS, $resultado->status);
+        self::assertSame([], $resultado->diagnosticos);
+        self::assertCount(4, $resultado->objetos);
+        self::assertInstanceOf(Equipamento::class, $resultado->objetos[0]);
+        self::assertInstanceOf(Manutencao::class, $resultado->objetos[1]);
+        self::assertInstanceOf(Manutencao::class, $resultado->objetos[2]);
+        self::assertInstanceOf(Registro::class, $resultado->objetos[3]);
+        self::assertSame('bomba_cr10', $resultado->objetos[0]->nome);
+        self::assertSame('inspecao_bomba_cr10', $resultado->objetos[1]->nome);
+        self::assertSame('reparar_bomba_cr10', $resultado->objetos[2]->nome);
+        self::assertSame('leitura_bomba_cr10', $resultado->objetos[3]->nome);
+    }
+
     public function testeProcess_ProgramaValidoComTodasAsDeclaracoes_RetornaObjetosDeDomainNaOrdemDoCodigo(): void {
         $codigo =
 "equipamento bomba_cr10 {
@@ -44,6 +130,7 @@ registro leitura_bomba_cr10 {
         $resultado = (new CMMSProcessor())->process($codigo);
 
         self::assertTrue($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SUCCESS, $resultado->status);
         self::assertSame([], $resultado->diagnosticos);
         self::assertCount(3, $resultado->objetos);
         self::assertInstanceOf(Equipamento::class, $resultado->objetos[0]);
@@ -136,6 +223,7 @@ registro leitura_bomba_cr10 {
         $resultado = (new CMMSProcessor())->process($codigo);
 
         self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
         self::assertSame([], $resultado->objetos);
         self::assertSame([
             'CMMS-SEM-008',
@@ -159,7 +247,207 @@ registro leitura_bomba_cr10 {
         }
     }
 
-    public function testeProcess_ProgramaSemanticamenteInvalido_RetornaDiagnosticoSemObjetos(): void {
+    public function testeProcess_IdentificadorDuplicado_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}
+
+equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-001', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_CaracteristicaDeProcessoDuplicada_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+        pressao 11 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-009', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_CondicaoDeManutencaoComVariavelNaoControlada_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}
+
+manutencao corretiva reparar_bomba_cr10 {
+    equipamento bomba_cr10
+    quando temperatura maior 30 celsius
+    procedimento reparar_bomba
+    prioridade alta
+    duracao 2 hora
+    prazo 1 dia
+    homem_hora 2
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-010', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_ReferenciaDeManutencaoParaEquipamentoInexistente_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"manutencao preventiva inspecao_bomba_cr10 {
+    equipamento bomba_inexistente
+    a_cada 1 dia
+    procedimento inspecionar_bomba
+    prioridade media
+    duracao 2 hora
+    homem_hora 2
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-002', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_ReferenciaDeRegistroParaEquipamentoInexistente_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"registro leitura_bomba_cr10 {
+    equipamento bomba_inexistente
+    data 10/09/2026-08:30
+    valores {
+        pressao 9 bar
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-003', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_UnidadeIncompativelComVariavel_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 litro
+    }
+    variaveis_controladas {
+        pressao
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-004', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_ValoresRegistradosDaMesmaVariavel_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}
+
+registro leitura_bomba_cr10 {
+    equipamento bomba_cr10
+    data 10/09/2026-08:30
+    valores {
+        pressao 9 bar
+        pressao 10 bar
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-006', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_IntervaloPreventivoIgualAZero_RetornaDiagnosticoSemanticoSemObjetos(): void {
         $codigo =
 "equipamento bomba_cr10 {
     tipo bomba_centrifuga
@@ -185,6 +473,7 @@ manutencao preventiva inspecao_bomba_cr10 {
         $resultado = (new CMMSProcessor())->process($codigo);
 
         self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
         self::assertSame([], $resultado->objetos);
         self::assertCount(1, $resultado->diagnosticos);
         self::assertSame('CMMS-SEM-007', $resultado->diagnosticos[0]->codigo);
@@ -205,6 +494,7 @@ manutencao preventiva inspecao_bomba_cr10 {
         $resultado = (new CMMSProcessor())->process($codigo);
 
         self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
         self::assertSame([], $resultado->objetos);
         self::assertCount(1, $resultado->diagnosticos);
         self::assertSame('CMMS-SEM-011', $resultado->diagnosticos[0]->codigo);
@@ -226,6 +516,7 @@ manutencao preventiva inspecao_bomba_cr10 {
         $resultado = (new CMMSProcessor())->process($codigo);
 
         self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
         self::assertSame([], $resultado->objetos);
         self::assertCount(1, $resultado->diagnosticos);
         self::assertSame('CMMS-SEM-013', $resultado->diagnosticos[0]->codigo);
@@ -364,6 +655,23 @@ manutencao preventiva inspecao_bomba_cr10 {
         ];
     }
 
+    public function testeProcess_CaractereLexicoInvalido_RetornaRangeDoCaractere(): void {
+        $resultado = (new CMMSProcessor())->process('equipamento bomba @');
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::LEXICAL_OR_SYNTACTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-LEX-001', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::LEXICAL, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+        self::assertNotNull($resultado->diagnosticos[0]->range);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->inicio->linha);
+        self::assertSame(18, $resultado->diagnosticos[0]->range->inicio->coluna);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->fim->linha);
+        self::assertSame(19, $resultado->diagnosticos[0]->range->fim->coluna);
+    }
+
     #[DataProvider('programasInvalidos')]
     public function testeProcess_ProgramaInvalido_RetornaDiagnosticosSemObjetosDeDomain(
         string $codigo,
@@ -375,11 +683,16 @@ manutencao preventiva inspecao_bomba_cr10 {
         $resultado = (new CMMSProcessor())->process($codigo);
 
         self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::LEXICAL_OR_SYNTACTIC_FAILURE, $resultado->status);
         self::assertSame([], $resultado->objetos);
         self::assertGreaterThanOrEqual($quantidade_minima_diagnosticos, count($resultado->diagnosticos));
 
         foreach ($resultado->diagnosticos as $diagnostico) {
             self::assertSame($origem_esperada, $diagnostico->origem);
+            self::assertSame(
+                $origem_esperada === DiagnosticOrigin::LEXICAL ? 'CMMS-LEX-001' : 'CMMS-SYN-001',
+                $diagnostico->codigo,
+            );
             self::assertSame(DiagnosticSeverity::ERROR, $diagnostico->severidade);
             self::assertNotSame('', $diagnostico->mensagem);
             self::assertNotNull($diagnostico->range);
@@ -395,9 +708,16 @@ manutencao preventiva inspecao_bomba_cr10 {
         $resultado = (new CMMSProcessor())->process('equipamento bomba {}');
 
         self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::LEXICAL_OR_SYNTACTIC_FAILURE, $resultado->status);
         self::assertSame([], $resultado->objetos);
         self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SYN-001', $resultado->diagnosticos[0]->codigo);
         self::assertSame(DiagnosticOrigin::SYNTACTIC, $resultado->diagnosticos[0]->origem);
         self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+        self::assertNotNull($resultado->diagnosticos[0]->range);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->inicio->linha);
+        self::assertSame(19, $resultado->diagnosticos[0]->range->inicio->coluna);
+        self::assertSame(0, $resultado->diagnosticos[0]->range->fim->linha);
+        self::assertSame(20, $resultado->diagnosticos[0]->range->fim->coluna);
     }
 }

@@ -26,7 +26,11 @@ final class CMMSProcessor {
         $tokens->fill();
 
         if ($lexer_listener->getDiagnostics() !== []) {
-            return new ProcessingResult([], $lexer_listener->getDiagnostics());
+            return new ProcessingResult(
+                status: ProcessingStatus::LEXICAL_OR_SYNTACTIC_FAILURE,
+                objetos: [],
+                diagnosticos: $lexer_listener->getDiagnostics(),
+            );
         }
 
         $parser = new \CMMSParser($tokens);
@@ -36,26 +40,41 @@ final class CMMSProcessor {
         $arvore = $parser->programa();
 
         if ($parser_listener->getDiagnostics() !== []) {
-            return new ProcessingResult([], $parser_listener->getDiagnostics());
+            return new ProcessingResult(
+                status: ProcessingStatus::LEXICAL_OR_SYNTACTIC_FAILURE,
+                objetos: [],
+                diagnosticos: $parser_listener->getDiagnostics(),
+            );
         }
 
         try {
             $objetos = new CMMSVisitor()->visit($arvore);
         } catch (InvalidRecordDateException $exception) {
-            return new ProcessingResult([], [$this->createSemanticDiagnostic(
-                'CMMS-SEM-011',
-                $exception->getMessage(),
-            )]);
+            return new ProcessingResult(
+                status: ProcessingStatus::SEMANTIC_FAILURE,
+                objetos: [],
+                diagnosticos: [$this->createSemanticDiagnostic(
+                    'CMMS-SEM-011',
+                    $exception->getMessage(),
+                )],
+            );
         } catch (UnrepresentableNumberException $exception) {
-            return new ProcessingResult([], [$this->createSemanticDiagnostic(
-                'CMMS-SEM-013',
-                $exception->getMessage(),
-            )]);
+            return new ProcessingResult(
+                status: ProcessingStatus::SEMANTIC_FAILURE,
+                objetos: [],
+                diagnosticos: [$this->createSemanticDiagnostic(
+                    'CMMS-SEM-013',
+                    $exception->getMessage(),
+                )],
+            );
         }
 
         $diagnosticos = (new SemanticValidator())->validate($objetos);
 
         return new ProcessingResult(
+            status: $diagnosticos === []
+                ? ProcessingStatus::SUCCESS
+                : ProcessingStatus::SEMANTIC_FAILURE,
             objetos: $diagnosticos === [] ? $objetos : [],
             diagnosticos: $diagnosticos,
         );
