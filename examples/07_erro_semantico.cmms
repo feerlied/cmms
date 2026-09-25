@@ -1,0 +1,12 @@
+equipamento bomba_gasolina_07 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        temperatura 10 hora
+        pressao_descarga 8 litro
+    }
+    variaveis_controladas {
+        pressao_descarga
+    }
+}

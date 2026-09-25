@@ -1,0 +1,25 @@
+equipamento bomba_gasolina_04 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        pressao_descarga 8 bar
+    }
+    variaveis_controladas {
+        pressao_descarga
+        horas_operacao
+        observacao_visual
+        vazamento
+    }
+}
+
+registro leitura_bomba_04 {
+    equipamento bomba_gasolina_04
+    data 15/09/2026-08:30
+    valores {
+        pressao_descarga 8.2 bar
+        horas_operacao 720 hora
+        observacao_visual normal
+        vazamento ausente
+    }
+}

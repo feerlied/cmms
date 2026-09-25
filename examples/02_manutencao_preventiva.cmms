@@ -1,0 +1,20 @@
+equipamento bomba_gasolina_02 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        pressao_descarga 8 bar
+    }
+    variaveis_controladas {
+        pressao_descarga
+    }
+}
+
+manutencao preventiva inspecao_bomba_02 {
+    equipamento bomba_gasolina_02
+    a_cada 30 dia
+    procedimento inspecionar_selos_e_mancais
+    prioridade media
+    duracao 2 hora
+    homem_hora 4
+}

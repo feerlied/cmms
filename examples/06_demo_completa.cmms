@@ -1,0 +1,74 @@
+equipamento bomba_gasolina_06 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        pressao_descarga 8 bar
+        vibracao 2.5 mm/s
+    }
+    variaveis_controladas {
+        pressao_descarga
+        vibracao
+        horas_operacao
+        observacao_visual
+        vazamento
+    }
+}
+
+manutencao preventiva inspecao_bomba_06 {
+    equipamento bomba_gasolina_06
+    a_cada 30 dia
+    procedimento inspecionar_selos_e_mancais
+    prioridade media
+    duracao 2 hora
+    homem_hora 4
+}
+
+manutencao corretiva corrigir_vibracao_06 {
+    equipamento bomba_gasolina_06
+    quando vibracao maior 4.5 mm/s e observacao_visual anormal
+    procedimento alinhar_conjunto_rotativo
+    prioridade alta
+    duracao 3 hora
+    prazo 1 dia
+    homem_hora 6
+}
+
+registro leitura_bomba_06 {
+    equipamento bomba_gasolina_06
+    data 15/09/2026-08:30
+    valores {
+        pressao_descarga 8.2 bar
+        vibracao 5.1 mm/s
+        horas_operacao 720 hora
+        observacao_visual anormal
+        vazamento ausente
+    }
+    observacao "Vibracao elevada durante a ronda"
+}
+
+registro execucao_inspecao_06 {
+    equipamento bomba_gasolina_06
+    data 15/09/2026-10:30
+    origem inspecao_bomba_06
+    tempo_execucao 90 minuto
+    status concluido
+    valores {
+        pressao_descarga 8.2 bar
+    }
+    relatorio "Inspecao concluida; solicitada correcao da vibracao"
+}
+
+registro execucao_correcao_06 {
+    equipamento bomba_gasolina_06
+    data 16/09/2026-14:00
+    origem corrigir_vibracao_06
+    tempo_execucao 3 hora
+    status concluido
+    valores {
+        vibracao 2.4 mm/s
+        observacao_visual normal
+        vazamento ausente
+    }
+    relatorio "Conjunto alinhado e vibracao normalizada"
+}

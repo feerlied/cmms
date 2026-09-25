@@ -1,0 +1,18 @@
+equipamento bomba_gasolina_01 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        vazao 40 m3/h
+        pressao_descarga 8 bar
+        vibracao 2.5 mm/s
+    }
+    variaveis_controladas {
+        vazao
+        pressao_descarga
+        vibracao
+        horas_operacao
+        observacao_visual
+        vazamento
+    }
+}

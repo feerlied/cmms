@@ -1,0 +1,21 @@
+equipamento bomba_gasolina_03 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        vibracao 2.5 mm/s
+    }
+    variaveis_controladas {
+        vibracao
+    }
+}
+
+manutencao corretiva corrigir_vibracao_03 {
+    equipamento bomba_gasolina_03
+    quando vibracao maior 4.5 mm/s
+    procedimento alinhar_conjunto_rotativo
+    prioridade alta
+    duracao 3 hora
+    prazo 1 dia
+    homem_hora 6
+}

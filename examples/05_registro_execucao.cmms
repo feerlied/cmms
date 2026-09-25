@@ -1,0 +1,35 @@
+equipamento bomba_gasolina_05 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        pressao_descarga 8 bar
+    }
+    variaveis_controladas {
+        pressao_descarga
+        observacao_visual
+    }
+}
+
+manutencao preventiva inspecao_bomba_05 {
+    equipamento bomba_gasolina_05
+    a_cada 30 dia
+    procedimento inspecionar_selos_e_mancais
+    prioridade media
+    duracao 2 hora
+    homem_hora 4
+}
+
+registro execucao_inspecao_05 {
+    equipamento bomba_gasolina_05
+    data 16/09/2026-10:15
+    origem inspecao_bomba_05
+    tempo_execucao 90 minuto
+    status concluido
+    valores {
+        pressao_descarga 8 bar
+        observacao_visual normal
+    }
+    relatorio "Selos e mancais inspecionados"
+    observacao "Bomba liberada para operacao"
+}
