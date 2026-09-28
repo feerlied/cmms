@@ -27,10 +27,11 @@ use Domain\VazamentoRegistro;
 final class SemanticValidator {
     /**
      * @param list<Equipamento|Manutencao|Registro> $objetos
+     * @param list<Equipamento> $equipamentos_persistidos
      * @return list<Diagnostic>
      */
-    public function validate(array $objetos): array {
-        $indices = $this->createIndexes($objetos);
+    public function validate(array $objetos, array $equipamentos_persistidos = []): array {
+        $indices = $this->createIndexes($objetos, $equipamentos_persistidos);
         $diagnosticos = [];
         $identificadores_vistos = [];
 
@@ -47,6 +48,13 @@ final class SemanticValidator {
             $identificadores_vistos[$identificador] = true;
 
             if ($objeto instanceof Equipamento) {
+                if (isset($indices['equipamentos_persistidos_por_identificador'][$objeto->nome])) {
+                    $diagnosticos[] = $this->createDiagnostic(
+                        'CMMS-SEM-001',
+                        "O equipamento '{$objeto->nome}' já foi declarado."
+                    );
+                }
+
                 array_push($diagnosticos, ...$this->validateEquipment($objeto));
                 continue;
             }
@@ -64,10 +72,22 @@ final class SemanticValidator {
 
     /**
      * @param list<Equipamento|Manutencao|Registro> $objetos
-     * @return array{equipamentos_por_identificador: array<string, list<Equipamento>>}
+     * @param list<Equipamento> $equipamentos_persistidos
+     * @return array{
+     *     equipamentos_por_identificador: array<string, list<Equipamento>>,
+     *     equipamentos_persistidos_por_identificador: array<string, list<Equipamento>>
+     * }
      */
-    private function createIndexes(array $objetos): array {
+    private function createIndexes(array $objetos, array $equipamentos_persistidos): array {
         $equipamentos_por_identificador = [];
+        $equipamentos_persistidos_por_identificador = [];
+
+        foreach ($equipamentos_persistidos as $equipamento) {
+            $equipamentos_por_identificador[$equipamento->nome] ??= [];
+            $equipamentos_por_identificador[$equipamento->nome][] = $equipamento;
+            $equipamentos_persistidos_por_identificador[$equipamento->nome] ??= [];
+            $equipamentos_persistidos_por_identificador[$equipamento->nome][] = $equipamento;
+        }
 
         foreach ($objetos as $objeto) {
             if (!$objeto instanceof Equipamento) {
@@ -80,6 +100,7 @@ final class SemanticValidator {
 
         return [
             'equipamentos_por_identificador' => $equipamentos_por_identificador,
+            'equipamentos_persistidos_por_identificador' => $equipamentos_persistidos_por_identificador,
         ];
     }
 

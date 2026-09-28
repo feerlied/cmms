@@ -525,6 +525,97 @@ manutencao preventiva inspecao_bomba_cr10 {
         self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
     }
 
+    public static function declaracoesIsoladasComContexto(): iterable {
+        yield 'manutenção preventiva' => [
+            "manutencao preventiva inspecao_bomba_cr10 {
+    equipamento bomba_cr10
+    a_cada 1 dia
+    procedimento inspecionar_bomba
+    prioridade media
+    duracao 2 hora
+    homem_hora 2
+}",
+            Manutencao::class,
+            'inspecao_bomba_cr10',
+        ];
+
+        yield 'registro' => [
+            "registro leitura_bomba_cr10 {
+    equipamento bomba_cr10
+    data 10/09/2026-08:30
+    valores {
+        pressao 9 bar
+    }
+}",
+            Registro::class,
+            'leitura_bomba_cr10',
+        ];
+    }
+
+    #[DataProvider('declaracoesIsoladasComContexto')]
+    public function testeProcess_DeclaracaoIsoladaComEquipamentoPersistido_RetornaSomenteObjetoNovo(
+        string $codigo,
+        string $classe_esperada,
+        string $nome_esperado,
+    ): void {
+        $equipamento_persistido = $this->createPersistedEquipment();
+
+        $resultado = (new CMMSProcessor())->process($codigo, [$equipamento_persistido]);
+
+        self::assertTrue($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SUCCESS, $resultado->status);
+        self::assertSame([], $resultado->diagnosticos);
+        self::assertCount(1, $resultado->objetos);
+        self::assertInstanceOf($classe_esperada, $resultado->objetos[0]);
+        self::assertSame($nome_esperado, $resultado->objetos[0]->nome);
+    }
+
+    public function testeProcess_ReferenciaAusenteComContexto_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"registro leitura_bomba_inexistente {
+    equipamento bomba_inexistente
+    data 10/09/2026-08:30
+    valores {
+        pressao 9 bar
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo, [$this->createPersistedEquipment()]);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-003', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
+    public function testeProcess_EquipamentoJaPersistido_RetornaDiagnosticoSemantico(): void {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo, [$this->createPersistedEquipment()]);
+
+        self::assertFalse($resultado->isSuccess());
+        self::assertSame(ProcessingStatus::SEMANTIC_FAILURE, $resultado->status);
+        self::assertSame([], $resultado->objetos);
+        self::assertCount(1, $resultado->diagnosticos);
+        self::assertSame('CMMS-SEM-001', $resultado->diagnosticos[0]->codigo);
+        self::assertSame(DiagnosticOrigin::SEMANTIC, $resultado->diagnosticos[0]->origem);
+        self::assertSame(DiagnosticSeverity::ERROR, $resultado->diagnosticos[0]->severidade);
+    }
+
     public static function programasInvalidos(): iterable {
         yield 'caractere léxico inválido' => [
             'equipamento bomba @',
@@ -719,5 +810,28 @@ manutencao preventiva inspecao_bomba_cr10 {
         self::assertSame(19, $resultado->diagnosticos[0]->range->inicio->coluna);
         self::assertSame(0, $resultado->diagnosticos[0]->range->fim->linha);
         self::assertSame(20, $resultado->diagnosticos[0]->range->fim->coluna);
+    }
+
+    private function createPersistedEquipment(): Equipamento {
+        $codigo =
+"equipamento bomba_cr10 {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }
+}";
+
+        $resultado = (new CMMSProcessor())->process($codigo);
+
+        self::assertTrue($resultado->isSuccess());
+        self::assertCount(1, $resultado->objetos);
+        self::assertInstanceOf(Equipamento::class, $resultado->objetos[0]);
+
+        return $resultado->objetos[0];
     }
 }

@@ -9,13 +9,17 @@ use Antlr\Antlr4\Runtime\InputStream;
 use Diagnostic\Diagnostic;
 use Diagnostic\DiagnosticOrigin;
 use Diagnostic\DiagnosticSeverity;
+use Domain\Equipamento;
 use Visitor\CMMSVisitor;
 use Visitor\Exception\InvalidRecordDateException;
 use Visitor\Exception\UnrepresentableNumberException;
 
 final class CMMSProcessor {
 
-    public function process(string $codigo): ProcessingResult {
+    /**
+     * @param list<Equipamento> $equipamentos_persistidos
+     */
+    public function process(string $codigo, array $equipamentos_persistidos = []): ProcessingResult {
         $input = InputStream::fromString($codigo);
         $lexer = new \CMMSLexer($input);
         $lexer_listener = new AntlrDiagnosticListener(DiagnosticOrigin::LEXICAL);
@@ -69,7 +73,7 @@ final class CMMSProcessor {
             );
         }
 
-        $diagnosticos = (new SemanticValidator())->validate($objetos);
+        $diagnosticos = (new SemanticValidator())->validate($objetos, $equipamentos_persistidos);
 
         return new ProcessingResult(
             status: $diagnosticos === []

@@ -448,6 +448,21 @@ final class SemanticValidatorTest extends TestCase {
         ]);
     }
 
+    public function testeValidate_EquipamentoPersistidoNaoERevalidado_AceitaRegistroComContexto(): void {
+        $equipamento_persistido = $this->createEquipment(
+            variaveis_controladas: [VariavelControlada::PRESSAO, VariavelControlada::PRESSAO],
+        );
+        $registro = $this->createRecord(
+            'registro_teste',
+            $equipamento_persistido->nome,
+            new ValorNumericoRegistro(VariavelControlada::PRESSAO, 9, UnidadeMedida::BAR)
+        );
+
+        $diagnosticos = (new SemanticValidator())->validate([$registro], [$equipamento_persistido]);
+
+        self::assertSame([], $diagnosticos);
+    }
+
     /**
      * @param list<VariavelControlada> $variaveis_controladas
      * @param list<CaracteristicaProcesso> $caracteristicas_processo
