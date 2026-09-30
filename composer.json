@@ -5,7 +5,9 @@
     "license": "proprietary",
     "require": {
         "antlr/antlr4-php-runtime": "^0.10.0",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5"
@@ -15,6 +17,7 @@
             "Application\\": "src/Application/",
             "Diagnostic\\": "src/Diagnostic/",
             "Domain\\": "src/Domain/",
+            "Infrastructure\\": "src/Infrastructure/",
             "Visitor\\": "src/Visitor/"
         },
         "classmap": [
