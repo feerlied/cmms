@@ -30,13 +30,14 @@ final readonly class EquipamentoRepository {
         try {
             $comando = $this->pdo->prepare(
                 'INSERT INTO equipamento
-                    (nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto)
-                 VALUES (:nome, :primeiro_cadastro, :primeiro_cadastro_timezone, :tipo, :servico, :produto)'
+                    (nome, primeiro_cadastro, tipo, servico, produto)
+                 VALUES (:nome, :primeiro_cadastro, :tipo, :servico, :produto)'
             );
             $comando->execute([
                 'nome' => $equipamento->nome,
-                'primeiro_cadastro' => $primeiro_cadastro->format('Y-m-d\TH:i:s.uP'),
-                'primeiro_cadastro_timezone' => $primeiro_cadastro->getTimezone()->getName(),
+                'primeiro_cadastro' => $primeiro_cadastro
+                    ->setTimezone(new \DateTimeZone('UTC'))
+                    ->format('Y-m-d H:i:s'),
                 'tipo' => $equipamento->tipo->value,
                 'servico' => $equipamento->servico->value,
                 'produto' => $equipamento->produto->value,
@@ -99,8 +100,7 @@ final readonly class EquipamentoRepository {
 
     public function findFirstRegistrationAt(string $identificador): ?\DateTimeImmutable {
         $comando = $this->pdo->prepare(
-            'SELECT primeiro_cadastro, primeiro_cadastro_timezone
-             FROM equipamento WHERE nome = :nome'
+            'SELECT primeiro_cadastro FROM equipamento WHERE nome = :nome'
         );
         $comando->execute(['nome' => $identificador]);
         $linha = $comando->fetch(PDO::FETCH_ASSOC);
@@ -109,8 +109,7 @@ final readonly class EquipamentoRepository {
             return null;
         }
 
-        return (new \DateTimeImmutable($linha['primeiro_cadastro']))
-            ->setTimezone(new \DateTimeZone($linha['primeiro_cadastro_timezone']));
+        return new \DateTimeImmutable($linha['primeiro_cadastro'], new \DateTimeZone('UTC'));
     }
 
     /** @return list<Equipamento> */

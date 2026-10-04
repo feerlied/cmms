@@ -39,10 +39,14 @@ final class SqliteDatabaseTest extends TestCase
             );
         }
 
-        self::assertContains(
-            'data_timezone',
-            array_column($banco->connection()->query('PRAGMA table_info(registro)')->fetchAll(PDO::FETCH_ASSOC), 'name')
-        );
+        foreach (['primeiro_cadastro_timezone', 'data_timezone', 'data_referencia_timezone'] as $coluna_fuso) {
+            foreach (['equipamento', 'registro', 'ordem_servico'] as $tabela) {
+                self::assertNotContains(
+                    $coluna_fuso,
+                    array_column($banco->connection()->query("PRAGMA table_info({$tabela})")->fetchAll(PDO::FETCH_ASSOC), 'name')
+                );
+            }
+        }
         self::assertContains(
             'valor_tipo',
             array_column($banco->connection()->query('PRAGMA table_info(registro_valor)')->fetchAll(PDO::FETCH_ASSOC), 'name')
@@ -194,7 +198,7 @@ final class SqliteDatabaseTest extends TestCase
         );
         $comando->execute([
             'status' => $status_final,
-            'data_cancelamento' => $status_final === 'cancelada' ? '2026-09-28T11:00:00Z' : null,
+            'data_cancelamento' => $status_final === 'cancelada' ? '2026-09-28 11:00:00' : null,
             'identificador' => 'os1',
         ]);
 
@@ -237,8 +241,8 @@ final class SqliteDatabaseTest extends TestCase
     {
         $comando = $conexao->prepare(<<<'SQL'
             INSERT INTO equipamento (
-                nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto
-            ) VALUES (:nome, '2026-09-28T10:00:00.000000+00:00', '+00:00',
+                nome, primeiro_cadastro, tipo, servico, produto
+            ) VALUES (:nome, '2026-09-28 10:00:00',
                       'bomba_centrifuga', 'bombeamento_de_agua', 'agua')
             SQL
         );
@@ -271,11 +275,11 @@ final class SqliteDatabaseTest extends TestCase
         $comando = $conexao->prepare(
             'INSERT INTO ordem_servico
              (identificador, manutencao_id, tipo_evento, chave_evento,
-              data_referencia, data_referencia_timezone, status, data_cancelamento,
+              data_referencia, status, data_cancelamento,
               procedimento_identificador, prioridade, duracao_valor, duracao_valor_tipo,
               duracao_unidade, homem_hora, homem_hora_tipo)
              VALUES (:identificador, :manutencao_id, :tipo_evento, :chave_evento,
-                     :data_referencia, :data_referencia_timezone, :status, NULL,
+                     :data_referencia, :status, NULL,
                      :procedimento_identificador, :prioridade, :duracao_valor, :duracao_valor_tipo,
                      :duracao_unidade, :homem_hora, :homem_hora_tipo)'
         );
@@ -284,8 +288,7 @@ final class SqliteDatabaseTest extends TestCase
             'manutencao_id' => $this->findIdByName($conexao, 'manutencao', $manutencao) ?? -1,
             'tipo_evento' => $tipo_evento,
             'chave_evento' => $chave_evento,
-            'data_referencia' => $chave_evento . 'T10:00:00Z',
-            'data_referencia_timezone' => '+00:00',
+            'data_referencia' => $chave_evento . ' 10:00:00',
             'status' => $status,
             'procedimento_identificador' => 'inspecionar',
             'prioridade' => 'media',

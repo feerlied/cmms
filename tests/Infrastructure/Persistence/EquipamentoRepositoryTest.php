@@ -84,9 +84,8 @@ final class EquipamentoRepositoryTest extends TestCase
             self::assertSame('23000', $erro->getCode());
         }
 
-        $linha = $this->pdo->query('SELECT primeiro_cadastro, primeiro_cadastro_timezone FROM equipamento')->fetch(PDO::FETCH_ASSOC);
-        self::assertSame('2026-09-28T08:00:00.123456-03:00', $linha['primeiro_cadastro']);
-        self::assertSame('-03:00', $linha['primeiro_cadastro_timezone']);
+        $linha = $this->pdo->query('SELECT primeiro_cadastro FROM equipamento')->fetch(PDO::FETCH_ASSOC);
+        self::assertSame('2026-09-28 11:00:00', $linha['primeiro_cadastro']);
         self::assertSame(1, (int)$this->pdo->query('SELECT COUNT(*) FROM equipamento')->fetchColumn());
         $recuperado = $this->repositorio->findByIdentifier('bomba_01');
         self::assertSame(TipoEquipamento::BOMBA_CENTRIFUGA, $recuperado->tipo);
@@ -140,7 +139,7 @@ final class EquipamentoRepositoryTest extends TestCase
         self::assertNull($this->repositorio->findByIdentifier('bomba_01\' OR 1=1 --'));
     }
 
-    public function testeFindFirstRegistrationAt_EquipamentoSalvo_PreservaFusoEMicrossegundos(): void
+    public function testeFindFirstRegistrationAt_EquipamentoSalvo_NormalizaUtcETruncaMicrossegundos(): void
     {
         $primeiro_cadastro = new DateTimeImmutable('2026-09-28 08:00:00.123456-03:00');
         $this->repositorio->save($this->createEquipment(), $primeiro_cadastro);
@@ -148,25 +147,22 @@ final class EquipamentoRepositoryTest extends TestCase
         $recuperado = $this->repositorio->findFirstRegistrationAt('bomba_01');
 
         self::assertInstanceOf(DateTimeImmutable::class, $recuperado);
-        self::assertSame('2026-09-28T08:00:00.123456-03:00', $recuperado->format('Y-m-d\TH:i:s.uP'));
-        self::assertSame('-03:00', $recuperado->getTimezone()->getName());
+        self::assertSame('2026-09-28T11:00:00.000000+00:00', $recuperado->format('Y-m-d\TH:i:s.uP'));
+        self::assertSame('UTC', $recuperado->getTimezone()->getName());
     }
 
-    public function testeFindFirstRegistrationAt_FusoNomeadoAntesDoHorarioDeVerao_PreservaInstanteERegrasDoFuso(): void
+    public function testeFindFirstRegistrationAt_FusoNomeado_NormalizaInstanteParaUtc(): void
     {
         $fuso = new DateTimeZone('America/New_York');
         $primeiro_cadastro = new DateTimeImmutable('2026-03-08 01:30:00.123456', $fuso);
         $this->repositorio->save($this->createEquipment(), $primeiro_cadastro);
 
         $recuperado = $this->repositorio->findFirstRegistrationAt('bomba_01');
-        $fuso_salvo = $this->pdo->query('SELECT primeiro_cadastro_timezone FROM equipamento')->fetchColumn();
-
-        self::assertSame('America/New_York', $fuso_salvo);
-        self::assertSame($primeiro_cadastro->format('U.u'), $recuperado->format('U.u'));
-        self::assertSame('America/New_York', $recuperado->getTimezone()->getName());
-        self::assertSame('2026-03-08T01:30:00.123456-05:00', $recuperado->format('Y-m-d\TH:i:s.uP'));
+        self::assertSame($primeiro_cadastro->format('U'), $recuperado->format('U'));
+        self::assertSame('UTC', $recuperado->getTimezone()->getName());
+        self::assertSame('2026-03-08T06:30:00.000000+00:00', $recuperado->format('Y-m-d\TH:i:s.uP'));
         self::assertSame(
-            '2026-03-08T03:30:00.123456-04:00',
+            '2026-03-08T07:30:00.000000+00:00',
             $recuperado->add(new DateInterval('PT3600S'))->format('Y-m-d\TH:i:s.uP')
         );
         self::assertEquals($this->createEquipment(), $this->repositorio->findByIdentifier('bomba_01'));
@@ -179,8 +175,8 @@ final class EquipamentoRepositoryTest extends TestCase
 
     public function testeFindByIdentifier_TipoInvalido_PropagaValueError(): void
     {
-        $this->pdo->exec("INSERT INTO equipamento (nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto)
-            VALUES ('bomba_01', '2026-09-28', 'UTC', 'invalido', 'invalido', 'invalido')");
+        $this->pdo->exec("INSERT INTO equipamento (nome, primeiro_cadastro, tipo, servico, produto)
+            VALUES ('bomba_01', '2026-09-28 00:00:00', 'invalido', 'invalido', 'invalido')");
 
         $this->expectException(ValueError::class);
         $this->repositorio->findByIdentifier('bomba_01');

@@ -112,7 +112,7 @@ final class ManutencaoRepositoryTest extends TestCase
     {
         $banco = new SqliteDatabase(':memory:');
         $banco->initializeSchema();
-        $banco->connection()->exec("INSERT INTO equipamento (nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto) VALUES ('eq1', '2026-09-28T10:00:00', 'UTC', 'bomba', 'transferencia', 'agua')");
+        $banco->connection()->exec("INSERT INTO equipamento (nome, primeiro_cadastro, tipo, servico, produto) VALUES ('eq1', '2026-09-28 10:00:00', 'bomba', 'transferencia', 'agua')");
         $banco->connection()->exec(<<<'SQL'
             CREATE TRIGGER falha_segunda_condicao BEFORE INSERT ON manutencao_condicao
             WHEN NEW.posicao = 1 BEGIN SELECT RAISE(ABORT, 'falha simulada'); END
@@ -163,8 +163,8 @@ final class ManutencaoRepositoryTest extends TestCase
     {
         $banco = new SqliteDatabase(':memory:');
         $banco->initializeSchema();
-        $banco->connection()->exec("INSERT INTO equipamento (nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto) VALUES ('eq1', '2026-09-28T10:00:00', 'UTC', 'bomba', 'transferencia', 'agua')");
-        $banco->connection()->exec("INSERT INTO equipamento (nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto) VALUES ('eq2', '2026-09-28T10:00:00', 'UTC', 'bomba', 'transferencia', 'agua')");
+        $banco->connection()->exec("INSERT INTO equipamento (nome, primeiro_cadastro, tipo, servico, produto) VALUES ('eq1', '2026-09-28 10:00:00', 'bomba', 'transferencia', 'agua')");
+        $banco->connection()->exec("INSERT INTO equipamento (nome, primeiro_cadastro, tipo, servico, produto) VALUES ('eq2', '2026-09-28 10:00:00', 'bomba', 'transferencia', 'agua')");
 
         return new ManutencaoRepository($banco);
     }

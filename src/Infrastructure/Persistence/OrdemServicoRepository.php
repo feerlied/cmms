@@ -25,12 +25,12 @@ final class OrdemServicoRepository {
         $comando = $this->banco->connection()->prepare(<<<'SQL'
             INSERT INTO ordem_servico (
                 identificador, manutencao_id, tipo_evento, chave_evento,
-                data_referencia, data_referencia_timezone, status, data_cancelamento,
+                data_referencia, status, data_cancelamento,
                 procedimento_identificador, prioridade, duracao_valor, duracao_valor_tipo,
                 duracao_unidade, homem_hora, homem_hora_tipo, prazo_valor, prazo_valor_tipo, prazo_unidade
             ) SELECT
                 :identificador, m.id, :tipo_evento, :chave_evento,
-                :data_referencia, :data_referencia_timezone, :status, NULL,
+                :data_referencia, :status, NULL,
                 :procedimento_identificador, :prioridade, :duracao_valor, :duracao_valor_tipo,
                 :duracao_unidade, :homem_hora, :homem_hora_tipo, :prazo_valor, :prazo_valor_tipo, :prazo_unidade
             FROM manutencao AS m
@@ -46,8 +46,7 @@ final class OrdemServicoRepository {
             'chave_evento' => $ordem->chave_evento,
             'data_referencia' => $ordem->data_referencia
                 ->setTimezone(new DateTimeZone('UTC'))
-                ->format('Y-m-d\TH:i:s.u\Z'),
-            'data_referencia_timezone' => $ordem->data_referencia->getTimezone()->getName(),
+                ->format('Y-m-d H:i:s'),
             'status' => $ordem->status->value,
             'procedimento_identificador' => $ordem->procedimento_identificador,
             'prioridade' => $ordem->prioridade->value,
@@ -100,8 +99,8 @@ final class OrdemServicoRepository {
               AND os.data_referencia < :fim
             SQL;
         $parametros = [
-            'inicio' => $inicio->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
-            'fim' => $fim->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'inicio' => $inicio->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
+            'fim' => $fim->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
         ];
 
         if ($equipamento_identificador !== null) {
@@ -185,9 +184,9 @@ final class OrdemServicoRepository {
         string $manutencao_identificador,
         DateTimeImmutable $data_leitura,
     ): bool {
-        $inicio_local = $data_leitura->setTime(0, 0);
-        $fim_local = $inicio_local->modify('+1 day');
         $fuso_utc = new DateTimeZone('UTC');
+        $inicio_utc = $data_leitura->setTimezone($fuso_utc)->setTime(0, 0);
+        $fim_utc = $inicio_utc->modify('+1 day');
         $comando = $this->banco->connection()->prepare(<<<'SQL'
             SELECT 1
             FROM ordem_servico AS os
@@ -204,8 +203,8 @@ final class OrdemServicoRepository {
             'equipamento' => $equipamento_identificador,
             'manutencao' => $manutencao_identificador,
             'status' => StatusOrdemServico::CANCELADA->value,
-            'inicio' => $inicio_local->setTimezone($fuso_utc)->format('Y-m-d\TH:i:s.u\Z'),
-            'fim' => $fim_local->setTimezone($fuso_utc)->format('Y-m-d\TH:i:s.u\Z'),
+            'inicio' => $inicio_utc->format('Y-m-d H:i:s'),
+            'fim' => $fim_utc->format('Y-m-d H:i:s'),
         ]);
 
         return $comando->fetchColumn() !== false;
@@ -236,7 +235,7 @@ final class OrdemServicoRepository {
         $comando->execute([
             'novo_status' => $novo_status->value,
             'data_cancelamento' => $data_cancelamento?->setTimezone(new DateTimeZone('UTC'))
-                ->format('Y-m-d\TH:i:s.u\Z'),
+                ->format('Y-m-d H:i:s'),
             'identificador' => $identificador,
             'status_anterior' => $ordem->status->value,
         ]);
@@ -253,14 +252,14 @@ final class OrdemServicoRepository {
     }
 
     private function deserializeServiceOrder(array $linha): OrdemServico {
-        $data_referencia = new DateTimeImmutable($linha['data_referencia']);
+        $fuso_utc = new DateTimeZone('UTC');
 
         $ordem = new OrdemServico(
             equipamento_identificador: $linha['equipamento'],
             manutencao_identificador: $linha['manutencao'],
             tipo_manutencao: TipoManutencao::from($linha['tipo_evento']),
             chave_evento: $linha['chave_evento'],
-            data_referencia: $data_referencia->setTimezone(new DateTimeZone($linha['data_referencia_timezone'])),
+            data_referencia: new DateTimeImmutable($linha['data_referencia'], $fuso_utc),
             procedimento_identificador: $linha['procedimento_identificador'],
             prioridade: Prioridade::from($linha['prioridade']),
             duracao: new Tempo(
@@ -275,7 +274,7 @@ final class OrdemServicoRepository {
             status: StatusOrdemServico::from($linha['status']),
             data_cancelamento: $linha['data_cancelamento'] === null
                 ? null
-                : new DateTimeImmutable($linha['data_cancelamento']),
+                : new DateTimeImmutable($linha['data_cancelamento'], $fuso_utc),
         );
 
         if ($ordem->identificador !== $linha['identificador']) {

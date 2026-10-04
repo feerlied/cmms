@@ -37,11 +37,11 @@ final readonly class RegistroRepository {
             $execucao = $registro->execucao;
             $comando = $this->pdo->prepare(
                 'INSERT INTO registro (
-                    nome, equipamento_id, data, data_timezone,
+                    nome, equipamento_id, data,
                     execucao_origem, execucao_tempo_valor, execucao_tempo_valor_tipo,
                     execucao_tempo_unidade, execucao_status, relatorio, observacao
                 ) VALUES (
-                    :nome, (SELECT id FROM equipamento WHERE nome = :equipamento_nome), :data, :data_timezone,
+                    :nome, (SELECT id FROM equipamento WHERE nome = :equipamento_nome), :data,
                     :execucao_origem, :execucao_tempo_valor, :execucao_tempo_valor_tipo,
                     :execucao_tempo_unidade, :execucao_status, :relatorio, :observacao
                 )'
@@ -49,8 +49,9 @@ final readonly class RegistroRepository {
             $comando->execute([
                 'nome' => $registro->nome,
                 'equipamento_nome' => $registro->equipamento_identificador,
-                'data' => $registro->data->format('Y-m-d\TH:i:s.uP'),
-                'data_timezone' => $registro->data->getTimezone()->getName(),
+                'data' => $registro->data
+                    ->setTimezone(new \DateTimeZone('UTC'))
+                    ->format('Y-m-d H:i:s'),
                 'execucao_origem' => $execucao?->origem,
                 'execucao_tempo_valor' => $execucao?->tempo_execucao->valor,
                 'execucao_tempo_valor_tipo' => $execucao === null
@@ -119,8 +120,9 @@ final readonly class RegistroRepository {
         $linhas = $comando->fetchAll(PDO::FETCH_ASSOC);
 
         usort($linhas, static function (array $linha_a, array $linha_b): int {
-            $data_a = new \DateTimeImmutable($linha_a['data']);
-            $data_b = new \DateTimeImmutable($linha_b['data']);
+            $fuso_utc = new \DateTimeZone('UTC');
+            $data_a = new \DateTimeImmutable($linha_a['data'], $fuso_utc);
+            $data_b = new \DateTimeImmutable($linha_b['data'], $fuso_utc);
             $comparacao_data = $data_b <=> $data_a;
 
             return $comparacao_data !== 0
@@ -203,12 +205,10 @@ final readonly class RegistroRepository {
             status: StatusRegistro::from($linha['execucao_status']),
         );
 
-        $data = new \DateTimeImmutable($linha['data']);
-
         return new Registro(
             nome: $linha['nome'],
             equipamento_identificador: $linha['equipamento_nome'],
-            data: $data->setTimezone(new \DateTimeZone($linha['data_timezone'])),
+            data: new \DateTimeImmutable($linha['data'], new \DateTimeZone('UTC')),
             valores: new ValorRegistradoCollection(...$valores),
             execucao: $execucao,
             relatorio: $linha['relatorio'],

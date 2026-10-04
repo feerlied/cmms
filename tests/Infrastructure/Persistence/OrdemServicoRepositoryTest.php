@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
 
 final class OrdemServicoRepositoryTest extends TestCase
 {
-    public function testeSave_OrdemPreventiva_PreservaCamposDataEFuso(): void
+    public function testeSave_OrdemPreventiva_NormalizaDataParaUtcComSegundos(): void
     {
         $repositorio = $this->createRepository();
         $data_referencia = new DateTimeImmutable('2026-09-28 10:30:15.123456', new DateTimeZone('America/Sao_Paulo'));
@@ -37,10 +37,10 @@ final class OrdemServicoRepositoryTest extends TestCase
         $repositorio->save($ordem);
         $recuperada = $repositorio->findByEvent('eq1', 'man1', TipoManutencao::PREVENTIVA, '2026-09-28T10:30:15');
 
-        self::assertEquals($ordem, $recuperada);
+        self::assertSame($ordem->identificador, $recuperada->identificador);
         self::assertSame(StatusOrdemServico::EM_ABERTO, $recuperada->status);
-        self::assertSame('2026-09-28 10:30:15.123456-03:00', $recuperada->data_referencia->format('Y-m-d H:i:s.uP'));
-        self::assertSame('America/Sao_Paulo', $recuperada->data_referencia->getTimezone()->getName());
+        self::assertSame('2026-09-28 13:30:15.000000+00:00', $recuperada->data_referencia->format('Y-m-d H:i:s.uP'));
+        self::assertSame('UTC', $recuperada->data_referencia->getTimezone()->getName());
         self::assertSame(1.5, $recuperada->duracao->valor);
         self::assertSame(2.5, $recuperada->homem_hora);
         self::assertNull($recuperada->prazo);
@@ -231,10 +231,10 @@ final class OrdemServicoRepositoryTest extends TestCase
         $banco->initializeSchema();
         $banco->connection()->exec(<<<'SQL'
             INSERT INTO equipamento
-                (nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto)
+                (nome, primeiro_cadastro, tipo, servico, produto)
             VALUES
-                ('eq1', '2026-09-28T10:00:00.000000+00:00', '+00:00', 'bomba_centrifuga', 'bombeamento_de_agua', 'agua'),
-                ('eq2', '2026-09-28T10:00:00.000000+00:00', '+00:00', 'bomba_centrifuga', 'bombeamento_de_agua', 'agua')
+                ('eq1', '2026-09-28 10:00:00', 'bomba_centrifuga', 'bombeamento_de_agua', 'agua'),
+                ('eq2', '2026-09-28 10:00:00', 'bomba_centrifuga', 'bombeamento_de_agua', 'agua')
             SQL
         );
         $banco->connection()->exec(<<<'SQL'

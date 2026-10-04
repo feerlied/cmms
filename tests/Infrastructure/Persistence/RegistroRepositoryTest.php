@@ -41,9 +41,9 @@ final class RegistroRepositoryTest extends TestCase
         $banco->initializeSchema();
         $this->pdo = $banco->connection();
         $this->pdo->exec("INSERT INTO equipamento (
-            nome, primeiro_cadastro, primeiro_cadastro_timezone, tipo, servico, produto
+            nome, primeiro_cadastro, tipo, servico, produto
         ) VALUES (
-            'bomba_01', '2026-09-28T08:00:00.000000-03:00', '-03:00', 'bomba', 'bombeamento', 'agua'
+            'bomba_01', '2026-09-28 11:00:00', 'bomba', 'bombeamento', 'agua'
         )");
         $this->repositorio = new RegistroRepository($this->pdo);
     }
@@ -58,7 +58,7 @@ final class RegistroRepositoryTest extends TestCase
         self::assertInstanceOf(Registro::class, $recuperado);
         self::assertSame('registro_01', $recuperado->nome);
         self::assertSame('bomba_01', $recuperado->equipamento_identificador);
-        self::assertSame('2026-09-28T08:30:00.123456-03:00', $recuperado->data->format('Y-m-d\TH:i:s.uP'));
+        self::assertSame('2026-09-28T11:30:00.000000+00:00', $recuperado->data->format('Y-m-d\TH:i:s.uP'));
         self::assertSame('Relatório de inspeção', $recuperado->relatorio);
         self::assertSame('Sem ruídos anormais', $recuperado->observacao);
         self::assertInstanceOf(ExecucaoRegistro::class, $recuperado->execucao);
@@ -104,7 +104,7 @@ final class RegistroRepositoryTest extends TestCase
         self::assertSame($vinculo['registro_id_esperado'], $vinculo['registro_id']);
     }
 
-    public function testeSaveEFindByIdentifier_ValorFloatInteiroEFusoNomeado_PreservaTiposEFuso(): void
+    public function testeSaveEFindByIdentifier_ValorFloatInteiroEFusoNomeado_NormalizaUtcEPreservaTipos(): void
     {
         $registro = new Registro(
             nome: 'registro_fuso',
@@ -120,8 +120,8 @@ final class RegistroRepositoryTest extends TestCase
         $this->repositorio->save($registro);
         $recuperado = $this->repositorio->findByIdentifier('registro_fuso');
 
-        self::assertSame('America/New_York', $recuperado->data->getTimezone()->getName());
-        self::assertSame($registro->data->format('Y-m-d\TH:i:s.uP'), $recuperado->data->format('Y-m-d\TH:i:s.uP'));
+        self::assertSame('UTC', $recuperado->data->getTimezone()->getName());
+        self::assertSame('2026-01-15T13:30:00.000000+00:00', $recuperado->data->format('Y-m-d\TH:i:s.uP'));
         self::assertSame(9.0, $recuperado->valores->all()[0]->valor);
         self::assertSame(1250.0, $recuperado->valores->all()[1]->horas_operacao->valor);
         self::assertSame(3.0, $recuperado->execucao->tempo_execucao->valor);

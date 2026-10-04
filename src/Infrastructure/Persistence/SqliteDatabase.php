@@ -29,7 +29,6 @@ final class SqliteDatabase {
                     id INTEGER PRIMARY KEY,
                     nome TEXT NOT NULL UNIQUE,
                     primeiro_cadastro TEXT NOT NULL,
-                    primeiro_cadastro_timezone TEXT NOT NULL,
                     tipo TEXT NOT NULL,
                     servico TEXT NOT NULL,
                     produto TEXT NOT NULL
@@ -108,7 +107,6 @@ final class SqliteDatabase {
                     nome TEXT NOT NULL UNIQUE,
                     equipamento_id INTEGER NOT NULL,
                     data TEXT NOT NULL,
-                    data_timezone TEXT NOT NULL,
                     execucao_origem TEXT,
                     execucao_tempo_valor NUMERIC,
                     execucao_tempo_valor_tipo TEXT CHECK (execucao_tempo_valor_tipo IN ('int', 'float')),
@@ -144,7 +142,6 @@ final class SqliteDatabase {
                     tipo_evento TEXT NOT NULL,
                     chave_evento TEXT NOT NULL,
                     data_referencia TEXT NOT NULL,
-                    data_referencia_timezone TEXT NOT NULL,
                     status TEXT NOT NULL,
                     data_cancelamento TEXT,
                     procedimento_identificador TEXT NOT NULL,
