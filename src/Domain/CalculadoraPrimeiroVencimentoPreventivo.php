@@ -8,13 +8,29 @@ use Domain\Enums\TipoManutencao;
 use Domain\Enums\UnidadeTempo;
 
 final class CalculadoraPrimeiroVencimentoPreventivo {
-    public function calculate(Manutencao $manutencao, \DateTimeImmutable $primeiro_cadastro): \DateTimeImmutable {
+    public function calculate(
+        Manutencao $manutencao,
+        \DateTimeImmutable $primeiro_cadastro,
+        int $ocorrencia = 1,
+    ): \DateTimeImmutable {
         if ($manutencao->tipo !== TipoManutencao::PREVENTIVA
             || !$manutencao->gatilho instanceof Tempo) {
             throw new \InvalidArgumentException('O cálculo de vencimento exige uma manutenção preventiva.');
         }
 
-        $minutos = $this->convertToMinutes($manutencao->gatilho);
+        if ($ocorrencia < 1) {
+            throw new \InvalidArgumentException('A ocorrência preventiva deve ser maior que zero.');
+        }
+
+        $minutos_periodo = $this->convertToMinutes($manutencao->gatilho);
+
+        if ($minutos_periodo > intdiv(PHP_INT_MAX, $ocorrencia)) {
+            throw new \InvalidArgumentException(
+                'O vencimento preventivo não pode ser representado como duração em minutos.'
+            );
+        }
+
+        $minutos = $minutos_periodo * $ocorrencia;
 
         return $primeiro_cadastro->add(new \DateInterval("PT{$minutos}M"));
     }

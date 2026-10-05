@@ -52,8 +52,8 @@ final class GeradorOrdemServicoPreventivaTest extends TestCase {
         self::assertSame('bomba_cr10', $ordem_servico->equipamento_identificador);
         self::assertSame('inspecao_bomba_cr10', $ordem_servico->manutencao_identificador);
         self::assertSame(TipoManutencao::PREVENTIVA, $ordem_servico->tipo_manutencao);
-        self::assertSame('2026-10-10T08:30:00.000000+00:00', $ordem_servico->chave_evento);
-        self::assertSame($primeiro_vencimento, $ordem_servico->data_referencia);
+        self::assertSame('2026-10-10T08:30:00', $ordem_servico->chave_evento);
+        self::assertSame('2026-10-10T08:30:00.000000+00:00', $ordem_servico->data_referencia->format('Y-m-d\\TH:i:s.uP'));
         self::assertSame('inspecionar_bomba', $ordem_servico->procedimento_identificador);
         self::assertSame(Prioridade::MEDIA, $ordem_servico->prioridade);
         self::assertSame(2, $ordem_servico->duracao->valor);
@@ -75,14 +75,14 @@ final class GeradorOrdemServicoPreventivaTest extends TestCase {
         $ordem_servico = $gerador->generate(
             $this->createPreventiveMaintenance(),
             $primeiro_vencimento,
-            new DateTimeImmutable('2026-10-10 08:30:00+00:00'),
+            new DateTimeImmutable('2026-10-10 05:30:00-03:00'),
         );
 
         self::assertNotNull($ordem_servico);
-        self::assertSame($primeiro_vencimento, $ordem_servico->data_referencia);
+        self::assertSame('2026-10-10T08:30:59.000000+00:00', $ordem_servico->data_referencia->format('Y-m-d\\TH:i:s.uP'));
     }
 
-    public function testeGenerate_VencimentoComMicrossegundos_PreservaPrecisaoNaChaveDoEvento(): void {
+    public function testeGenerate_VencimentoComMicrossegundos_NormalizaUtcETruncaNaChaveDoEvento(): void {
         $primeiro_vencimento = new DateTimeImmutable('2026-10-10 08:30:00.000060-03:00');
 
         $ordem_servico = (new GeradorOrdemServicoPreventiva())->generate(
@@ -92,8 +92,8 @@ final class GeradorOrdemServicoPreventivaTest extends TestCase {
         );
 
         self::assertNotNull($ordem_servico);
-        self::assertSame('2026-10-10T08:30:00.000060-03:00', $ordem_servico->chave_evento);
-        self::assertSame($primeiro_vencimento, $ordem_servico->data_referencia);
+        self::assertSame('2026-10-10T11:30:00', $ordem_servico->chave_evento);
+        self::assertSame('2026-10-10T11:30:00.000000+00:00', $ordem_servico->data_referencia->format('Y-m-d\\TH:i:s.uP'));
     }
 
     private function createPreventiveMaintenance(): Manutencao {

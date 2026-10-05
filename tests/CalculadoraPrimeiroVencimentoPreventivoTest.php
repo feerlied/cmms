@@ -75,6 +75,27 @@ final class CalculadoraPrimeiroVencimentoPreventivoTest extends TestCase {
         );
     }
 
+    public function testeCalculate_TerceiraOcorrencia_MultiplicaPeriodoEmMinutos(): void {
+        $vencimento = (new CalculadoraPrimeiroVencimentoPreventivo())->calculate(
+            $this->createPreventiveMaintenance(new Tempo(30, UnidadeTempo::MINUTO)),
+            new DateTimeImmutable('2026-10-10 08:30:45-03:00'),
+            3,
+        );
+
+        self::assertSame('2026-10-10 10:00:45.000000-03:00', $vencimento->format('Y-m-d H:i:s.uP'));
+    }
+
+    public function testeCalculate_OcorrenciaIgualAZero_RejeitaValorInvalido(): void {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A ocorrência preventiva deve ser maior que zero.');
+
+        (new CalculadoraPrimeiroVencimentoPreventivo())->calculate(
+            $this->createPreventiveMaintenance(new Tempo(30, UnidadeTempo::MINUTO)),
+            new DateTimeImmutable('2026-10-10 08:30:00-03:00'),
+            0,
+        );
+    }
+
     public function testeCalculate_DiaAtravessandoHorarioDeVerao_PreservaDuracaoDe86400Segundos(): void {
         $primeiro_cadastro = new DateTimeImmutable('2026-03-08 00:30:00 America/New_York');
 
