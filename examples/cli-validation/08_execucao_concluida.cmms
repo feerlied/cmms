@@ -1,0 +1,12 @@
+registro execucao_concluida_cli {
+    equipamento bomba_validacao_cli
+    data 11/10/2026-11:00
+    origem alarme_pressao_cli
+    tempo_execucao 1 hora
+    status concluido
+    valores {
+        pressao 10 bar
+        observacao_visual normal
+    }
+    relatorio "Pressao normalizada"
+}

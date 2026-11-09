@@ -1,0 +1,8 @@
+registro leitura_sem_observacao_cli {
+    equipamento bomba_validacao_cli
+    data 10/10/2026-09:00
+    valores {
+        pressao 13 bar
+    }
+    observacao "Observacao visual ausente; a condicao nao deve disparar"
+}

@@ -1,0 +1,12 @@
+registro execucao_preventiva_cli {
+    equipamento trocador_validacao_cli
+    data 20/10/2026-10:00
+    origem inspecao_trocador_cli
+    tempo_execucao 30 minuto
+    status concluido
+    valores {
+        temperatura 25 C
+        observacao_visual normal
+    }
+    relatorio "Inspecao preventiva concluida"
+}

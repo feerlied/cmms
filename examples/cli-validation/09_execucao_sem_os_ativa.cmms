@@ -1,0 +1,10 @@
+registro execucao_sem_os_ativa_cli {
+    equipamento bomba_validacao_cli
+    data 11/10/2026-11:30
+    origem alarme_pressao_cli
+    tempo_execucao 15 minuto
+    status em_aberto
+    valores {
+        pressao 10 bar
+    }
+}

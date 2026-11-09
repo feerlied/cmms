@@ -1,0 +1,12 @@
+registro execucao_cancelada_cli {
+    equipamento bomba_validacao_cli
+    data 12/10/2026-08:00
+    origem alarme_pressao_cli
+    tempo_execucao 20 minuto
+    status cancelado
+    valores {
+        pressao 13 bar
+        observacao_visual anormal
+    }
+    relatorio "Intervencao cancelada"
+}

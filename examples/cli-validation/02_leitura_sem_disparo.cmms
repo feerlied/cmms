@@ -1,0 +1,12 @@
+registro leitura_sem_disparo_cli {
+    equipamento bomba_validacao_cli
+    data 10/10/2026-08:00
+    valores {
+        pressao 11 bar
+        vibracao 2.6 mm/s
+        horas_operacao 800 hora
+        observacao_visual normal
+        vazamento ausente
+    }
+    observacao "Condicao corretiva falsa"
+}

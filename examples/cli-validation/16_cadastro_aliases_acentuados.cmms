@@ -1,0 +1,21 @@
+equipamento tanque_alias_cli {
+    tipo tanque de gasolina
+    serviço armazenamento de gasolina
+    produto gasolina
+    características processo {
+        temperatura 24 celsius
+    }
+    variáveis controladas {
+        temperatura
+        observacao visual
+    }
+}
+
+manutenção preventiva inspecao_alias_cli {
+    equipamento tanque_alias_cli
+    a cada 1 dia
+    procedimento inspecionar_tanque
+    prioridade crítica
+    duração 1 hora
+    homem hora 2
+}

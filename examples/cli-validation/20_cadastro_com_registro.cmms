@@ -1,0 +1,7 @@
+registro registro_nao_aceito_no_cadastro_cli {
+    equipamento bomba_validacao_cli
+    data 14/10/2026-08:00
+    valores {
+        pressao 10 bar
+    }
+}

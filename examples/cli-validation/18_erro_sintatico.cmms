@@ -1,0 +1,10 @@
+equipamento equipamento_incompleto_cli {
+    tipo bomba_centrifuga
+    servico bombeamento_de_agua
+    produto agua
+    caracteristicas_processo {
+        pressao 10 bar
+    }
+    variaveis_controladas {
+        pressao
+    }

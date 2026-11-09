@@ -1,0 +1,9 @@
+registro leitura_dispara_cli {
+    equipamento bomba_validacao_cli
+    data 10/10/2026-10:00
+    valores {
+        pressao 13.2 bar
+        observacao_visual anormal
+    }
+    observacao "Mesmo identificador com conteudo diferente"
+}

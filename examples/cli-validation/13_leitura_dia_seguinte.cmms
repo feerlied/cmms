@@ -1,0 +1,8 @@
+registro leitura_dia_seguinte_cli {
+    equipamento bomba_validacao_cli
+    data 13/10/2026-09:00
+    valores {
+        pressao 13.5 bar
+        observacao_visual anormal
+    }
+}

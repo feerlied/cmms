@@ -1,0 +1,21 @@
+equipamento trocador_validacao_cli {
+    tipo trocador_de_calor
+    servico resfriamento_de_gasolina
+    produto gasolina
+    caracteristicas_processo {
+        temperatura 25 C
+    }
+    variaveis_controladas {
+        temperatura
+        observacao_visual
+    }
+}
+
+manutencao preventiva inspecao_trocador_cli {
+    equipamento trocador_validacao_cli
+    a_cada 1 minuto
+    procedimento inspecionar_trocador
+    prioridade media
+    duracao 30 minuto
+    homem_hora 1
+}

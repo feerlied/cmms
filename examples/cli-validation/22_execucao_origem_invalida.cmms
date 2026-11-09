@@ -1,0 +1,10 @@
+registro execucao_origem_invalida_cli {
+    equipamento bomba_validacao_cli
+    data 13/10/2026-10:00
+    origem manutencao_inexistente_cli
+    tempo_execucao 10 minuto
+    status em_execucao
+    valores {
+        pressao 12 bar
+    }
+}

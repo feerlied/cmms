@@ -1,0 +1,11 @@
+equipamento equipamento_unidade_invalida_cli {
+    tipo bomba_alternativa
+    servico bombeamento_de_diesel
+    produto diesel
+    caracteristicas_processo {
+        pressao 10 litro
+    }
+    variaveis_controladas {
+        pressao
+    }
+}

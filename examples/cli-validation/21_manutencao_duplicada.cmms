@@ -1,0 +1,9 @@
+manutencao corretiva alarme_pressao_cli {
+    equipamento bomba_validacao_cli
+    quando pressao maior 12 bar
+    procedimento outro_procedimento
+    prioridade alta
+    duracao 1 hora
+    prazo 1 dia
+    homem_hora 1
+}
