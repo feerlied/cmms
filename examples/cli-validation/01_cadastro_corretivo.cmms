@@ -14,7 +14,6 @@ equipamento bomba_validacao_cli {
         vazamento
     }
 }
-2026-10-10T08:30:00-03:00
 
 manutencao corretiva alarme_pressao_cli {
     equipamento bomba_validacao_cli
@@ -25,17 +24,3 @@ manutencao corretiva alarme_pressao_cli {
     prazo 1 dia
     homem_hora 4
 }
-motivacao
-comentar sobre o artigo cmms pq é melhor inves de caixas
-- pq nao é eficiente
-- controle semantico
-- mensagens/validações de erros
-ferramentas usadas
-explicar o antlr
-como ele lida com erros
-tipos de erro
-ligacao com a semantica
-analise sintatica/semantica
-total
-
-
